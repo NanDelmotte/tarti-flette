@@ -1,42 +1,47 @@
-import { NextResponse } from "next/server"; import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function POST(request: Request) {
-const { phone, code } = await request.json();
+  const { phone, code } = await request.json();
 
-if (!phone || !code) {
-return NextResponse.json(
-{ error: "Phone and code are required" },
-{ status: 400 }
-);
-}
+  if (!phone || !code) {
+    return NextResponse.json(
+      { error: "Phone and code are required" },
+      { status: 400 }
+    );
+  }
 
-const supabase = createClient(
-process.env.SUPABASE_URL!,
-process.env.SUPABASE_ANON_KEY!
-);
+  const cookieStore = cookies();
+  const response = NextResponse.json({ ok: true });
 
-const { data, error } = await supabase
-.from("otp_codes")
-.select("*")
-.eq("phone", phone)
-.eq("code", code)
-.order("created_at", { ascending: false })
-.limit(1);
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          response.cookies.set({ name, value: "", ...options });
+        },
+      },
+    }
+  );
 
-if (error) {
-console.error(error);
-return NextResponse.json(
-{ error: "Database error" },
-{ status: 500 }
-);
-}
+  const { error } = await supabase.auth.verifyOtp({
+    phone,
+    token: code,
+    type: "sms",
+  });
 
-if (!data || data.length === 0) {
-return NextResponse.json(
-{ error: "Invalid code" },
-{ status: 400 }
-);
-}
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 
-return NextResponse.json({ message: "OTP verified" });
+  return response;
 }
