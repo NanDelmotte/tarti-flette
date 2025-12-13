@@ -1,0 +1,92 @@
+:root { 
+  --global-bg: #0a2342; 
+  --box-bg: #f4c1e9; 
+  --button-bg: #4da1ff; 
+  --button-txt: #e6007a; 
+  --text: #000; }
+/* ──────────────────────────────────────────
+  PALETTE 1 — CALIFORNIA DREAMING
+────────────────────────────────────────── */
+html.palette-california-dreaming {
+  --global-bg: #E15E46;   /* sunset orange */
+  --box-bg:    #afbeb2;   /* sand */
+  --button-bg: #D34B38;   /* burnt red */
+  --button-txt:#FEDFC1;   /* pale sand */
+  --text:      #4A1D0C;   /* dark espresso */
+}
+
+/* ──────────────────────────────────────────
+  PALETTE 2 — COASTAL TEAL
+────────────────────────────────────────── */
+html.palette-coastal-teal {
+  --global-bg: #004F6D;
+  --box-bg:    #ba9bb9;
+  --button-bg: #147A8A;
+  --button-txt:#FFE1B0;
+  --text:      #163640;
+}
+
+/* ──────────────────────────────────────────
+  PALETTE 3 — SUNSET PUNCH
+────────────────────────────────────────── */
+html.palette-sunset-punch {
+  --global-bg: #FF6F61;
+  --box-bg:    #aae1a4;
+  --button-bg: #FF9770;
+  --button-txt:#561D12;
+  --text:      #3A120B;
+}
+
+/* ──────────────────────────────────────────
+  PALETTE 4 — MIDNIGHT ELECTRIC
+────────────────────────────────────────── */
+html.palette-midnight-electric {
+  --global-bg: #003049;
+  --box-bg:    #e5cac2;
+  --button-bg: #0286CD;
+  --button-txt:#FFE7C2;
+  --text:      #072A38;
+}
+/* ──────────────────────────────────────────
+  PALETTE 5 — PARTY POSTER
+────────────────────────────────────────── */
+html.palette-party-poster {
+  --global-bg: #2B2A4C;
+  --box-bg:    #add3bf;
+  --button-bg: #FD3C45;
+  --button-txt:#FFDDC1;
+  --text:      #1B1A36;
+}
+
+/* ──────────────────────────────────────────
+  PALETTE 6 — RETRO MIAMI
+────────────────────────────────────────── */
+html.palette-retro-miami {
+  --global-bg: #05668D;
+  --box-bg:    #FDEBD0;
+  --button-bg: #44A1A0;
+  --button-txt:#FFF2D7;
+  --text:      #072B3A;
+}
+
+/* ──────────────────────────────────────────
+  PALETTE 7 — URBAN RALLY
+────────────────────────────────────────── */
+html.palette-urban-rally {
+  --global-bg: #5C3C92;
+  --box-bg:    #e4b892;
+  --button-bg: #E94F37;
+  --button-txt:#FFECD1;
+  --text:      #2B1A40;
+}
+
+/* ──────────────────────────────────────────
+  PALETTE 8 — GOLDEN HOUR
+────────────────────────────────────────── */
+html.palette-golden-hour {
+  --global-bg: #C36A2D;
+  --box-bg:    #FFF4DC;
+  --button-bg: #9A3C1D;
+  --button-txt:#FFE9C6;
+  --text:      #4A220E;
+}

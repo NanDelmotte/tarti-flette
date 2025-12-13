@@ -1,7 +1,14 @@
-@tailwind base;
-@tailwind components;
+@tailwind base; 
+@tailwind components; 
 @tailwind utilities;
 
-body {
-  @apply bg-black text-white;
+/* GLOBAL RESET */
+html, body {
+  background: var(--global-bg);
+  color: var(--text);
+}
+
+/* Force theme text everywhere */
+* {
+  color: var(--text);
 }

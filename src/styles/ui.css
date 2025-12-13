@@ -1,0 +1,131 @@
+/* ==========================================================
+   UNIVERSAL THEME UI
+   ========================================================== */
+
+/* -------- GLOBAL -------- */
+
+* {
+  color: var(--text) !important;
+  text-align: center;
+}
+
+/* -------- TYPOGRAPHY -------- */
+
+.text-campaign {
+  color: var(--text) !important;
+  text-shadow: 2px 2px 0 var(--button-txt);
+}
+
+.h1, .h2, .h3 {
+  color: var(--text) !important;
+  text-shadow: none !important;
+}
+
+.h1 { font-size: 2.2rem; font-weight: 900; }
+.h2 { font-size: 1.5rem; font-weight: 800; }
+.h3 { font-size: 1.2rem; font-weight: 700; }
+
+/* -------- FRAME PANEL -------- */
+
+.frame-campaign {
+  background: var(--box-bg) !important;
+  border: 2px solid var(--button-txt);
+  border-radius: 14px;
+  padding: 14px;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+/* -------- CARDS (Dashboard / Event blocks) -------- */
+
+.card-soft {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+/* -------- INPUTS -------- */
+
+.frame-campaign input,
+.frame-campaign textarea,
+.frame-campaign select {
+  width: 100%;
+  background: var(--box-bg) !important;
+  border: 2px solid var(--button-txt) !important;
+  border-radius: 8px;
+  padding: 12px;
+  font-weight: 700;
+  color: var(--text) !important;
+}
+
+.frame-campaign input::placeholder,
+.frame-campaign textarea::placeholder {
+  color: var(--text) !important;
+  opacity: .35 !important;
+}
+
+/* -------- BUTTONS -------- */
+
+.button-campaign {
+  background: var(--button-bg) !important;
+  color: var(--button-txt) !important;
+  border-radius: 8px;
+  padding: 14px 18px;
+  box-shadow: 4px 4px 0 var(--button-txt);
+  font-weight: 900;
+  text-transform: uppercase;
+  transition: transform .08s;
+  display: block;
+  width: 100%;
+}
+
+.button-campaign:active {
+  transform: translate(2px,2px);
+  box-shadow: 1px 1px 0 var(--button-txt);
+}
+
+/* -------- LINKS & ACTIONS -------- */
+
+.link-quiet {
+  font-size: .75rem;
+  text-decoration: underline;
+  opacity: .85;
+}
+
+.link-quiet:hover {
+  opacity: 1;
+}
+
+.action-row {
+  display: flex;
+  justify-content: center;
+  gap: 1.25rem;
+  padding-top: .75rem;
+}
+
+/* -------- FORM SECTION LABELS -------- */
+
+.form-section-title {
+  font-size: .82rem;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  opacity: .75;
+  font-weight: 800;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* -------- ICON / SVG -------- */
+
+.frame-campaign svg:not(.logo-svg) * {
+  fill: var(--button-bg) !important;
+  stroke: var(--button-bg) !important;
+}
+
+.logo-svg,
+.logo-svg * {
+  color: var(--box-bg) !important;
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
