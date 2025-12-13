@@ -24,6 +24,9 @@ export default function PublicEventPage({
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
 
+  // ✅ NEW: prevent double submission
+  const [submitting, setSubmitting] = useState(false);
+
   useEffect(() => {
     async function load() {
       const res = await fetch(`/api/events/${params.event_id}`);
@@ -39,6 +42,9 @@ export default function PublicEventPage({
   }, [params.event_id]);
 
   async function submitStatus(s: "yes" | "maybe" | "no") {
+    if (submitting) return;
+    setSubmitting(true);
+
     setStatus(s);
     await fetch(`/api/events/${params.event_id}/rsvp`, {
       method: "POST",
@@ -48,11 +54,16 @@ export default function PublicEventPage({
         event_instance_id: selectedInstanceId,
       }),
     });
+
+    setSubmitting(false);
     setStep("contact");
   }
 
   async function submitContact(e: React.FormEvent) {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
+
     await fetch(`/api/events/${params.event_id}/rsvp`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -63,6 +74,8 @@ export default function PublicEventPage({
         phone,
       }),
     });
+
+    setSubmitting(false);
     setStep("done");
   }
 
@@ -99,13 +112,25 @@ export default function PublicEventPage({
         {/* Step 1: RSVP */}
         {step === "choose" && (
           <div className="mt-6 space-y-3">
-            <button className="button-campaign w-full" onClick={() => submitStatus("yes")}>
+            <button
+              className="button-campaign w-full"
+              disabled={submitting}
+              onClick={() => submitStatus("yes")}
+            >
               Yes
             </button>
-            <button className="button-campaign w-full" onClick={() => submitStatus("maybe")}>
+            <button
+              className="button-campaign w-full"
+              disabled={submitting}
+              onClick={() => submitStatus("maybe")}
+            >
               Maybe
             </button>
-            <button className="button-campaign w-full" onClick={() => submitStatus("no")}>
+            <button
+              className="button-campaign w-full"
+              disabled={submitting}
+              onClick={() => submitStatus("no")}
+            >
               No
             </button>
           </div>
@@ -127,8 +152,12 @@ export default function PublicEventPage({
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
             />
-            <button type="submit" className="button-campaign w-full">
-              Confirm RSVP
+            <button
+              type="submit"
+              disabled={submitting}
+              className="button-campaign w-full"
+            >
+              {submitting ? "Saving…" : "Confirm RSVP"}
             </button>
           </form>
         )}

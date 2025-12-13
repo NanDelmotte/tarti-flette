@@ -1,3 +1,6 @@
+console.log("SUPABASE URL USED =", process.env.NEXT_PUBLIC_SUPABASE_URL);
+
+
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
@@ -19,12 +22,12 @@ export async function POST(
     );
   }
 
-  // Step 1 only (no phone yet) → acknowledge
+  // Step 1: status only (no phone yet)
   if (!phone) {
     return NextResponse.json({ ok: true, needsContact: true });
   }
 
-  // Upsert guest by phone + event
+  // 1️⃣ Upsert guest
   const { data: guest, error: guestError } = await supabase
     .from("guests")
     .upsert(
@@ -39,13 +42,27 @@ export async function POST(
     .single();
 
   if (guestError || !guest) {
+    console.error("Guest upsert failed:", guestError);
     return NextResponse.json(
       { error: "Could not create guest" },
       { status: 500 }
     );
   }
 
-  // Upsert RSVP
+  // 2️⃣ Check if RSVP already exists (idempotency)
+  const { data: existingRsvp } = await supabase
+    .from("rsvps")
+    .select("id, status")
+    .eq("event_instance_id", event_instance_id)
+    .eq("guest_id", guest.id)
+    .maybeSingle();
+
+  if (existingRsvp && existingRsvp.status === status) {
+    // ✅ Same RSVP already saved → success
+    return NextResponse.json({ ok: true });
+  }
+
+  // 3️⃣ Upsert RSVP
   const { error: rsvpError } = await supabase.from("rsvps").upsert(
     {
       event_instance_id,
@@ -57,6 +74,7 @@ export async function POST(
   );
 
   if (rsvpError) {
+    console.error("RSVP upsert failed:", rsvpError);
     return NextResponse.json(
       { error: "Could not save RSVP" },
       { status: 500 }
