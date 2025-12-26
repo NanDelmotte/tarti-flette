@@ -1,32 +1,27 @@
+// src/app/cirklie/[event_id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Frame from "../../../components/Frame";
 
-type EventInstance = {
-  id: string;
-  datetime: string;
+type RsvpGroup = {
+  yes: string[];
+  maybe: string[];
+  no: string[];
 };
 
-type Event = {
-  id: string;
-  title: string;
-  description?: string;
-  instances: EventInstance[];
-};
-
-export default function EventDashboardPage({
+export default function EventPage({
   params,
 }: {
   params: { event_id: string };
 }) {
   const eventId = params.event_id;
 
-  const [event, setEvent] = useState<Event | null>(null);
-  const [selectedInstanceId, setSelectedInstanceId] = useState<string | null>(
-    null
-  );
+  const [event, setEvent] = useState<any>(null);
+  const [rsvps, setRsvps] = useState<Record<string, RsvpGroup>>({});
+  const [selectedInstanceId, setSelectedInstanceId] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -35,13 +30,17 @@ export default function EventDashboardPage({
         const data = await res.json();
 
         if (!res.ok || !data.event) {
-          setEvent(null);
-        } else {
-          setEvent(data.event);
-          setSelectedInstanceId(data.instances?.[0]?.id || null);
+          setError("Failed to load event");
+          return;
         }
+
+        setEvent(data.event);
+        setRsvps(data.rsvps || {});
+        setSelectedInstanceId(
+          data.event.instances?.[0]?.id || ""
+        );
       } catch {
-        setEvent(null);
+        setError("Failed to load event");
       } finally {
         setLoading(false);
       }
@@ -50,80 +49,111 @@ export default function EventDashboardPage({
     load();
   }, [eventId]);
 
+  function formatDateTime(value: string) {
+    return new Date(value).toLocaleString();
+  }
+
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-global">
+      <main className="min-h-screen flex items-center justify-center p-6">
         <Frame>Loading…</Frame>
       </main>
     );
   }
 
-  if (!event) {
+  if (error || !event) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-global">
+      <main className="min-h-screen flex items-center justify-center p-6">
         <Frame>
-          <h1 className="h2 text-campaign">Cirklie not found</h1>
-
-          <div className="mt-6">
-            <button
-              className="button-campaign w-full"
-              onClick={() => (window.location.href = "/dashboard")}
-            >
-              Back to my dashboard
-            </button>
-          </div>
+          <a href="/dashboard" className="underline text-xs opacity-70">
+            ← Back to dashboard
+          </a>
+          <p className="mt-4">{error}</p>
         </Frame>
       </main>
     );
   }
 
+  const current: RsvpGroup =
+    rsvps[selectedInstanceId] || {
+      yes: [],
+      maybe: [],
+      no: [],
+    };
+
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 bg-global">
+    <main className="min-h-screen flex items-center justify-center p-6">
       <Frame>
-        <h1 className="h2 text-campaign">{event.title}</h1>
+        <a href="/dashboard" className="underline text-xs opacity-70">
+          ← Back to dashboard
+        </a>
+
+        <h1 className="h2 text-campaign mt-4">
+          {event.title}
+        </h1>
 
         {event.description && (
-          <p className="text-sm opacity-70 mt-1">{event.description}</p>
+          <p className="text-sm opacity-70 mt-1">
+            {event.description}
+          </p>
         )}
 
-        {/* Actions */}
-        <div className="mt-4">
-          <select
-            className="text-sm underline bg-transparent"
-            onChange={(e) => {
-              if (e.target.value === "share") {
-                window.location.href = `/cirklie/${event.id}/share`;
+        {/* Date selector */}
+        <div className="mt-6 text-center">
+          {event.instances.length === 1 ? (
+            <div className="opacity-80 text-sm">
+              {formatDateTime(event.instances[0].datetime)}
+            </div>
+          ) : (
+            <select
+              value={selectedInstanceId}
+              onChange={(e) =>
+                setSelectedInstanceId(e.target.value)
               }
-              if (e.target.value === "dashboard") {
-                window.location.href = "/dashboard";
-              }
-            }}
-          >
-            <option>Actions</option>
-            <option value="share">Share Cirklie</option>
-            <option value="dashboard">Back to dashboard</option>
-          </select>
+            >
+              {event.instances.map((inst: any) => (
+                <option key={inst.id} value={inst.id}>
+                  {formatDateTime(inst.datetime)}
+                </option>
+              ))}
+            </select>
+          )}
         </div>
 
-        {/* Date */}
-        <div className="mt-6 space-y-2">
-          <label className="form-section-title">Date</label>
-          <select
-            value={selectedInstanceId || ""}
-            onChange={(e) => setSelectedInstanceId(e.target.value)}
-          >
-            {event.instances.map((inst) => (
-              <option key={inst.id} value={inst.id}>
-                {new Date(inst.datetime).toLocaleString()}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* RSVP lists */}
+        <div className="mt-6 space-y-4 text-sm">
+          <div>
+            <strong>Yes ({current.yes.length})</strong>
+            {current.yes.length > 0 && (
+              <ul className="mt-1 opacity-80">
+                {current.yes.map((name, i) => (
+                  <li key={i}>{name}</li>
+                ))}
+              </ul>
+            )}
+          </div>
 
-        {/* RSVP placeholder */}
-        <div className="mt-6 text-sm opacity-70">
-          RSVPs
-          <div className="mt-2 opacity-60">No responses yet.</div>
+          <div>
+            <strong>Maybe ({current.maybe.length})</strong>
+            {current.maybe.length > 0 && (
+              <ul className="mt-1 opacity-80">
+                {current.maybe.map((name, i) => (
+                  <li key={i}>{name}</li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <strong>No ({current.no.length})</strong>
+            {current.no.length > 0 && (
+              <ul className="mt-1 opacity-80">
+                {current.no.map((name, i) => (
+                  <li key={i}>{name}</li>
+                ))}
+              </ul>
+            )}
+          </div>
         </div>
       </Frame>
     </main>

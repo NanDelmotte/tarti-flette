@@ -1,85 +1,107 @@
-console.log("SUPABASE URL USED =", process.env.NEXT_PUBLIC_SUPABASE_URL);
-
+// src/app/api/events/[event_id]/rsvp/route.ts
 
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
 export async function POST(
   request: Request,
   { params }: { params: { event_id: string } }
 ) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const {
+    event_instance_id,
+    status,
+    first_name,
+    last_name,
+    comment,
+  } = await request.json();
 
-  const { status, event_instance_id, name, phone } = await request.json();
-
-  if (!status || !event_instance_id) {
+  if (!event_instance_id || !status || !first_name) {
     return NextResponse.json(
-      { error: "Missing status or event instance" },
+      { error: "Missing required fields" },
       { status: 400 }
     );
   }
 
-  // Step 1: status only (no phone yet)
-  if (!phone) {
-    return NextResponse.json({ ok: true, needsContact: true });
-  }
+  const normalizedComment =
+    typeof comment === "string" && comment.trim()
+      ? comment.trim()
+      : null;
 
-  // 1️⃣ Upsert guest
-  const { data: guest, error: guestError } = await supabase
-    .from("guests")
-    .upsert(
-      {
-        event_id: params.event_id,
-        phone,
-        name: name || null,
-      },
-      { onConflict: "event_id,phone" }
-    )
-    .select()
-    .single();
+  const cookieStore = cookies();
+  const response = NextResponse.json({ ok: true });
 
-  if (guestError || !guest) {
-    console.error("Guest upsert failed:", guestError);
-    return NextResponse.json(
-      { error: "Could not create guest" },
-      { status: 500 }
-    );
-  }
-
-  // 2️⃣ Check if RSVP already exists (idempotency)
-  const { data: existingRsvp } = await supabase
-    .from("rsvps")
-    .select("id, status")
-    .eq("event_instance_id", event_instance_id)
-    .eq("guest_id", guest.id)
-    .maybeSingle();
-
-  if (existingRsvp && existingRsvp.status === status) {
-    // ✅ Same RSVP already saved → success
-    return NextResponse.json({ ok: true });
-  }
-
-  // 3️⃣ Upsert RSVP
-  const { error: rsvpError } = await supabase.from("rsvps").upsert(
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      event_instance_id,
-      guest_id: guest.id,
-      status,
-      responded_at: new Date().toISOString(),
-    },
-    { onConflict: "event_instance_id,guest_id" }
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          response.cookies.set({ name, value: "", ...options });
+        },
+      },
+    }
   );
 
-  if (rsvpError) {
-    console.error("RSVP upsert failed:", rsvpError);
-    return NextResponse.json(
-      { error: "Could not save RSVP" },
-      { status: 500 }
-    );
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const profileId = user?.id ?? null;
+
+  // 1️⃣ Look for existing RSVP
+  let existingQuery = supabase
+    .from("rsvps")
+    .select("id")
+    .eq("event_instance_id", event_instance_id)
+    .limit(1);
+
+  if (profileId) {
+    existingQuery = existingQuery.eq("profile_id", profileId);
+  } else {
+    existingQuery = existingQuery
+      .is("profile_id", null)
+      .eq("first_name", String(first_name).trim())
+      .eq("last_name", String(last_name || "").trim());
   }
 
-  return NextResponse.json({ ok: true });
+  const { data: existing } = await existingQuery.maybeSingle();
+
+  // 2️⃣ Update or insert
+  if (existing?.id) {
+    const { error } = await supabase
+      .from("rsvps")
+      .update({
+        status,
+        comment: normalizedComment,
+        responded_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id);
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  } else {
+    const { error } = await supabase.from("rsvps").insert({
+      event_instance_id,
+      status,
+      first_name: String(first_name).trim(),
+      last_name: String(last_name || "").trim(),
+      profile_id: profileId,
+      comment: normalizedComment,
+      responded_at: new Date().toISOString(),
+    });
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+  }
+
+  return response;
 }

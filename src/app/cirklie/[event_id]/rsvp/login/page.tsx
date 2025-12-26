@@ -1,16 +1,23 @@
-// src/app/login/page.tsx
+// src/app/cirklie/[event_id]/rsvp/login/page.tsx
 "use client";
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import Frame from "../../components/Frame";
+import Frame from "../../../../../components/Frame";
 
-type Step = "phone" | "code";
+type Step = "details" | "code";
 
-export default function GenericLoginPage() {
+export default function RsvpLoginPage({
+  params,
+}: {
+  params: { event_id: string };
+}) {
   const router = useRouter();
 
-  const [step, setStep] = useState<Step>("phone");
+  const [step, setStep] = useState<Step>("details");
+
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState("");
 
@@ -55,6 +62,8 @@ export default function GenericLoginPage() {
         body: JSON.stringify({
           phone: phone.trim(),
           code: code.trim(),
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
         }),
       });
 
@@ -64,7 +73,7 @@ export default function GenericLoginPage() {
         return;
       }
 
-      router.push("/dashboard");
+      router.push(`/cirklie/${params.event_id}/rsvp/verified`);
     } catch {
       setError("Network error");
     } finally {
@@ -75,12 +84,26 @@ export default function GenericLoginPage() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-global">
       <Frame>
-        <h1 className="h1 text-campaign">Login</h1>
+        <h1 className="h1 text-campaign">Verify to RSVP</h1>
 
         {error && <p className="text-xs text-red-700">{error}</p>}
 
-        {step === "phone" && (
-          <form onSubmit={sendCode} className="space-y-4">
+        {step === "details" && (
+          <form onSubmit={sendCode} className="space-y-3">
+            <input
+              className="w-full bg-button rounded-md px-3 py-3"
+              placeholder="First name"
+              required
+              value={firstName}
+              onChange={(e) => setFirstName(e.target.value)}
+            />
+            <input
+              className="w-full bg-button rounded-md px-3 py-3"
+              placeholder="Last name"
+              required
+              value={lastName}
+              onChange={(e) => setLastName(e.target.value)}
+            />
             <input
               className="w-full bg-button rounded-md px-3 py-3"
               placeholder="+31 6 1234 5678"
@@ -104,7 +127,7 @@ export default function GenericLoginPage() {
               onChange={(e) => setCode(e.target.value)}
             />
             <button className="button-campaign w-full" disabled={loading}>
-              Verify
+              Verify & Continue
             </button>
           </form>
         )}

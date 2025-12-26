@@ -1,16 +1,28 @@
+// src/app/api/events/[event_id]/dashboard/route.ts
+
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function GET(
   request: Request,
   { params }: { params: { event_id: string } }
 ) {
-  const supabase = createClient(
+  const cookieStore = cookies();
+
+  const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+      },
+    }
   );
 
-  // Event
+  // 1️⃣ Event
   const { data: event, error: eventError } = await supabase
     .from("events")
     .select("id,title,description,created_at")
@@ -21,7 +33,7 @@ export async function GET(
     return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  // Instances
+  // 2️⃣ Instances
   const { data: instances, error: instError } = await supabase
     .from("event_instances")
     .select("id,datetime,location")
@@ -29,51 +41,66 @@ export async function GET(
     .order("datetime", { ascending: true });
 
   if (instError) {
-    return NextResponse.json({ error: "Could not load instances" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not load instances" },
+      { status: 500 }
+    );
   }
 
-  // RSVPs per instance
-  const { data: rsvps, error: rsvpError } = await supabase
-    .from("rsvps")
-    .select("id,event_instance_id,status,guest_id")
-    .in(
-      "event_instance_id",
-      (instances ?? []).map((i: any) => i.id)
-    );
+  const instanceIds = (instances ?? []).map((i) => i.id);
+
+  // 3️⃣ RSVPs (anon + profile)
+  const { data: rsvps, error: rsvpError } = instanceIds.length
+    ? await supabase
+        .from("rsvps")
+        .select(`
+          event_instance_id,
+          status,
+          first_name,
+          last_name,
+          profile_id,
+          profiles (
+            first_name
+          )
+        `)
+        .in("event_instance_id", instanceIds)
+    : { data: [], error: null };
 
   if (rsvpError) {
-    return NextResponse.json({ error: "Could not load RSVPs" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Could not load RSVPs" },
+      { status: 500 }
+    );
   }
 
-  // Guests
-  const guestIds = Array.from(new Set((rsvps ?? []).map((r: any) => r.guest_id)));
-  const { data: guests } = await supabase
-    .from("guests")
-    .select("id,name,phone")
-    .in("id", guestIds);
+  // 4️⃣ Shape RSVPs by instance (explicit name resolution)
+  const rsvpsByInstance: Record<
+    string,
+    { status: string; name: string }[]
+  > = {};
 
-  // Shape RSVPs by instance
-  const byInstance: Record<string, any[]> = {};
-  (instances ?? []).forEach((i: any) => (byInstance[i.id] = []));
-
-  (rsvps ?? []).forEach((r: any) => {
-    const g = (guests ?? []).find((x: any) => x.id === r.guest_id);
-    byInstance[r.event_instance_id]?.push({
-      status: r.status,
-      guest: g ? { id: g.id, name: g.name, phone: g.phone } : null,
-    });
+  (instances ?? []).forEach((i) => {
+    rsvpsByInstance[i.id] = [];
   });
 
-  // Interest signals (count only)
-  const { count: interestCount } = await supabase
-    .from("interest_signals")
-    .select("*", { count: "exact", head: true })
-    .eq("event_id", params.event_id);
+  (rsvps ?? []).forEach((r: any) => {
+    let name = "Guest";
+
+    if (r.profile_id && r.profiles?.first_name) {
+      name = r.profiles.first_name;
+    } else if (r.first_name) {
+      name = `${r.first_name}${r.last_name ? " " + r.last_name : ""}`;
+    }
+
+    rsvpsByInstance[r.event_instance_id]?.push({
+      status: r.status,
+      name,
+    });
+  });
 
   return NextResponse.json({
     event,
     instances,
-    rsvpsByInstance: byInstance,
-    interestCount: interestCount ?? 0,
+    rsvpsByInstance,
   });
 }

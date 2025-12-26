@@ -1,8 +1,10 @@
+// src/app/cirklie/[event_id]/share/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
 import Frame from "../../../../components/Frame";
 import QRCode from "qrcode";
+import { appCopy } from "@/lib/appCopy";
 
 export default function ShareCirkliePage({
   params,
@@ -26,9 +28,12 @@ export default function ShareCirkliePage({
     async function fetchEvent() {
       const res = await fetch(`/api/events/${eventId}`);
       const data = await res.json();
+      
+      console.log("EVENT API DATA:", data);
+
 
       setEvent(data.event || null);
-      setInstances(data.instances || []);
+setInstances(data.event?.instances || []);
       setLoading(false);
     }
 
@@ -52,7 +57,7 @@ export default function ShareCirkliePage({
   if (!event) {
     return (
       <main className="min-h-screen flex items-center justify-center p-6 bg-global text-default">
-        <Frame>Event not found.</Frame>
+        <Frame>{appCopy.noun.singular} not found.</Frame>
       </main>
     );
   }
@@ -62,7 +67,9 @@ export default function ShareCirkliePage({
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-global text-default">
       <Frame>
-        <h1 className="h1 text-campaign">Your Cirklie is ready 🎉</h1>
+        <h1 className="h1 text-campaign">
+          Your {appCopy.noun.singular} is ready 🎉
+        </h1>
 
         <div className="space-y-4 mt-4">
           {/* Event summary */}
@@ -85,7 +92,7 @@ export default function ShareCirkliePage({
             {qrDataUrl && (
               <img
                 src={qrDataUrl}
-                alt="QR code"
+                alt={`${appCopy.noun.singular} QR code`}
                 className="rounded-md shadow"
               />
             )}
@@ -93,13 +100,17 @@ export default function ShareCirkliePage({
 
           {/* Share link */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Share this link:</label>
+            <label className="text-sm font-medium">
+              Share this link:
+            </label>
             <input
               type="text"
               readOnly
               value={shareUrl}
               className="w-full rounded-md bg-button px-3 py-2 text-sm"
-              onClick={(e) => (e.target as HTMLInputElement).select()}
+              onClick={(e) =>
+                (e.target as HTMLInputElement).select()
+              }
             />
           </div>
 
@@ -110,7 +121,7 @@ export default function ShareCirkliePage({
               if (navigator.share) {
                 navigator.share({
                   title: event.title,
-                  text: "Join my Cirklie!",
+                  text: `Join my ${appCopy.noun.singular}!`,
                   url: shareUrl,
                 });
               } else {
@@ -124,7 +135,9 @@ export default function ShareCirkliePage({
           {/* Back to dashboard */}
           <button
             className="button-campaign w-full mt-2"
-            onClick={() => (window.location.href = "/dashboard")}
+            onClick={() =>
+              (window.location.href = "/dashboard")
+            }
           >
             Go to my dashboard
           </button>

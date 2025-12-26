@@ -1,5 +1,5 @@
 "use client";
-
+import { appCopy } from "@/lib/appCopy";
 export default function Logo({ small = false }) {
   const size = small ? "120px" : "200px";
 
@@ -30,7 +30,7 @@ export default function Logo({ small = false }) {
         fontWeight="600"
         fontSize={small ? 26 : 38}
       >
-        Cirklie
+        {appCopy.appName}
       </text>
     </svg>
   );
