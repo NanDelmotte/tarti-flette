@@ -1,11 +1,11 @@
-export const dynamic = "force-dynamic";
-
 "use client";
 
 import { useEffect, useState } from "react";
 import Frame from "../../components/Frame";
 import { appCopy } from "@/lib/appCopy";
 import { createClient } from "@supabase/supabase-js";
+
+export const dynamic = "force-dynamic";
 
 export default function CreatePage() {
 const [supabase, setSupabase] = useState<any>(null);
