@@ -1,7 +1,7 @@
-// src/app/create/page.tsx
-"use client";
-
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+"use client";
 
 import { useEffect, useState } from "react";
 import Frame from "../../components/Frame";
@@ -11,10 +11,7 @@ import { createBrowserClient } from "@supabase/ssr";
 type Visibility = "inner" | "friends" | "public";
 
 export default function CreateEventPage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const [supabase, setSupabase] = useState<any>(null);
 
   const [needsProfile, setNeedsProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
@@ -34,8 +31,19 @@ export default function CreateEventPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /* Load profile once */
+  /* Init Supabase ONLY on client */
   useEffect(() => {
+    const client = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    setSupabase(client);
+  }, []);
+
+  /* Load profile */
+  useEffect(() => {
+    if (!supabase) return;
+
     async function loadProfile() {
       const { data, error } = await supabase
         .from("profiles")
@@ -188,99 +196,6 @@ export default function CreateEventPage() {
             }
           />
         </div>
-
-        <div className="space-y-2">
-          <span className="text-sm font-medium">
-            Is this a series or a one-off?
-          </span>
-
-          <div className="flex gap-3">
-            <button
-              type="button"
-              className={!isSeries ? "button-campaign" : "bg-button w-full"}
-              onClick={() => setIsSeries(false)}
-            >
-              One-off
-            </button>
-
-            <button
-              type="button"
-              className={isSeries ? "button-campaign" : "bg-button w-full"}
-              onClick={() => setIsSeries(true)}
-            >
-              Series
-            </button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <label className="form-section-title">
-            {isSeries ? "Dates & times" : "Date & time"}
-          </label>
-
-          {dates.map((value, index) => (
-            <div key={index} className="flex gap-2">
-              <input
-                type="datetime-local"
-                required
-                value={value}
-                onChange={(e) =>
-                  handleDateChange(index, e.target.value)
-                }
-              />
-              {isSeries && dates.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    removeDate(index)
-                  }
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-          ))}
-
-          {isSeries && (
-            <button
-              type="button"
-              onClick={addDate}
-              className="text-xs underline"
-            >
-              + Add another date
-            </button>
-          )}
-        </div>
-
-        <div className="space-y-2">
-          <label className="form-section-title">
-            Visibility
-          </label>
-          <select
-            value={visibility}
-            onChange={(e) =>
-              setVisibility(
-                e.target.value as Visibility
-              )
-            }
-          >
-            <option value="inner">
-              Inner circle only
-            </option>
-            <option value="friends">
-              Friends & acquaintances
-            </option>
-            <option value="public">
-              Public link (anyone)
-            </option>
-          </select>
-        </div>
-
-        {error && (
-          <p className="text-xs text-red-700">
-            {error}
-          </p>
-        )}
 
         <button
           type="submit"
