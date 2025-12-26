@@ -1,4 +1,3 @@
-// src/app/cirklie/[event_id]/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -20,9 +19,15 @@ export default function EventPage({
   const [event, setEvent] = useState<any>(null);
   const [rsvps, setRsvps] = useState<Record<string, RsvpGroup>>({});
   const [selectedInstanceId, setSelectedInstanceId] = useState<string>("");
+
+  const [myRsvp, setMyRsvp] = useState<
+    "yes" | "maybe" | "no" | null
+  >(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Load event + RSVP lists
   useEffect(() => {
     async function load() {
       try {
@@ -47,6 +52,23 @@ export default function EventPage({
     }
 
     load();
+  }, [eventId]);
+
+  // Load *my* RSVP
+  useEffect(() => {
+    fetch("/api/rsvps/mine")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (!d?.events) return;
+
+        const match = d.events.find(
+          (e: any) => e.event_id === eventId
+        );
+
+        if (match?.status) {
+          setMyRsvp(match.status);
+        }
+      });
   }, [eventId]);
 
   function formatDateTime(value: string) {
@@ -92,8 +114,26 @@ export default function EventPage({
           {event.title}
         </h1>
 
+        {myRsvp && (
+          <p className="text-sm font-medium text-center mt-2">
+            You RSVPd:{" "}
+            <span className="uppercase">{myRsvp}</span>
+          </p>
+        )}
+
+        {myRsvp && (
+          <div className="mt-3 text-center">
+            <a
+              href={`/cirklie/${eventId}/rsvp/respond`}
+              className="underline text-sm"
+            >
+              Change RSVP
+            </a>
+          </div>
+        )}
+
         {event.description && (
-          <p className="text-sm opacity-70 mt-1">
+          <p className="text-sm opacity-70 mt-2">
             {event.description}
           </p>
         )}
