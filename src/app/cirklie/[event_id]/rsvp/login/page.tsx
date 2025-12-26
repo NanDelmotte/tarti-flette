@@ -84,7 +84,7 @@ export default function RsvpLoginPage({
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-global">
       <Frame>
-        <h1 className="h1 text-campaign">Verify to RSVP</h1>
+        <h1 className="h1 text-campaign">You’re almost in</h1>
 
         {error && <p className="text-xs text-red-700">{error}</p>}
 
@@ -112,7 +112,7 @@ export default function RsvpLoginPage({
               onChange={(e) => setPhone(e.target.value)}
             />
             <button className="button-campaign w-full" disabled={loading}>
-              Send SMS
+             Join through SMS
             </button>
           </form>
         )}

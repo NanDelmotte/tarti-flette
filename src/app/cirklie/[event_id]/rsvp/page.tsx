@@ -1,4 +1,3 @@
-// src/app/cirklie/[event_id]/rsvp/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -31,40 +30,57 @@ export default function RsvpGatePage({
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <Frame>
-        <p className="text-sm opacity-70 mb-2">
-          <b>{organizerName}</b> invited you to
+        {/* Context */}
+        <p className="text-sm opacity-70 mb-1">
+          <b>{organizerName}</b> is hosting
         </p>
 
-        <h1 className="h1 text-campaign mb-4">{event.title}</h1>
+        <h1 className="h1 text-campaign mb-3">
+          {event.title}
+        </h1>
 
-        <div className="space-y-4">
-          <p className="text-sm opacity-80">
-            There are two ways to RSVP:
-            <br />1. Verify your phone to join {appCopy.appName}
-            <br />2. One-time Yes / No / Maybe
-          </p>
+        <p className="text-sm opacity-70 mb-6">
+          {event.visibility === "inner" &&
+            "This is an inner-circle gathering"}
+          {event.visibility === "friends" &&
+            "Friends and friends of friends are welcome"}
+          {event.visibility === "public" &&
+            "This event is open — the more the merrier"}
+        </p>
 
+        {/* Prompt */}
+        <p className="text-sm font-medium mb-4">
+          How would you like to respond?
+        </p>
+
+        {/* Option 1 */}
+        <div className="space-y-2">
           <button
             className="button-campaign w-full"
             onClick={() => {
               window.location.href = `/cirklie/${params.event_id}/rsvp/login`;
             }}
           >
-            Yes, verify my phone
+            Join through SMS
           </button>
 
+          <p className="text-xs opacity-70">
+            Join {appCopy.appName} to chat, change your response later, and see
+            who else is coming
+          </p>
+        </div>
+
+        {/* Option 2 */}
+        <div className="mt-5 space-y-2">
           <a
             href={`/cirklie/${params.event_id}/rsvp/respond?mode=anon`}
-            className="underline text-sm block text-center"
+            className="underline text-sm block"
           >
-            No, a simple RSVP is fine
+            Respond just this once
           </a>
 
-          <p className="text-xs opacity-70 mt-4 text-center">
-            <strong>Why should I join {appCopy.appName}?</strong>
-            <br />
-            It is the only way to chat, change RSVP, create links and see who is
-            coming!
+          <p className="text-xs opacity-70">
+            A quick Yes / Maybe / No — no account needed
           </p>
         </div>
       </Frame>

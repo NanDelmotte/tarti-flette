@@ -1,6 +1,8 @@
 // src/app/create/page.tsx
 "use client";
 
+export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import Frame from "../../components/Frame";
 import { appCopy } from "@/lib/appCopy";

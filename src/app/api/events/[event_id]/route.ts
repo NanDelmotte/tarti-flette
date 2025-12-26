@@ -1,5 +1,3 @@
-// src/app/api/events/[event_id]/route.ts
-
 import { NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
@@ -22,13 +20,14 @@ export async function GET(
     }
   );
 
-  // 1️⃣ Fetch event + instances
+  // 1️⃣ Event + instances
   const { data: event, error: eventError } = await supabase
     .from("events")
     .select(`
       id,
       title,
       description,
+      visibility,
       organizer_id,
       event_instances (
         id,
@@ -40,53 +39,63 @@ export async function GET(
     .single();
 
   if (eventError || !event) {
-    return NextResponse.json({ error: "Event not found" }, { status: 404 });
+    return NextResponse.json(
+      { error: "Event not found" },
+      { status: 404 }
+    );
   }
 
-  // 2️⃣ Organizer (optional)
+  // 2️⃣ Organizer (WITH id)
   const { data: organizer } = await supabase
     .from("profiles")
-    .select("first_name")
+    .select("id, first_name")
     .eq("id", event.organizer_id)
     .maybeSingle();
 
-  // 3️⃣ Fetch RSVPs (by instance ids)
-  const instanceIds = (event.event_instances || []).map((i: any) => i.id);
+  // 3️⃣ RSVPs
+  const instanceIds = (event.event_instances || []).map(
+    (i: any) => i.id
+  );
 
   const { data: rsvpRows } = await supabase
     .from("rsvps")
-    .select(`event_instance_id, status, first_name, last_name`)
+    .select(
+      "event_instance_id, status, first_name, last_name"
+    )
     .in("event_instance_id", instanceIds);
 
-  // 4️⃣ Init buckets
-  const rsvps: Record<string, { yes: string[]; maybe: string[]; no: string[] }> =
-    {};
+  const rsvps: Record<
+    string,
+    { yes: string[]; maybe: string[]; no: string[] }
+  > = {};
 
   for (const id of instanceIds) {
     rsvps[id] = { yes: [], maybe: [], no: [] };
   }
 
-  // 5️⃣ Fill buckets
   for (const row of rsvpRows || []) {
     const bucket = rsvps[row.event_instance_id];
     if (!bucket) continue;
 
     const status = String(row.status || "").toLowerCase();
-    const name = `${row.first_name} ${row.last_name}`;
+    const name = `${row.first_name} ${row.last_name ?? ""}`.trim();
 
     if (status === "yes") bucket.yes.push(name);
     else if (status === "maybe") bucket.maybe.push(name);
     else if (status === "no") bucket.no.push(name);
   }
 
-  // 6️⃣ Return response
+  // 4️⃣ Response
   return NextResponse.json({
     event: {
       id: event.id,
       title: event.title,
       description: event.description,
+      visibility: event.visibility,
       organizer: {
-        first_name: organizer?.first_name ?? "The organizer",
+        id: organizer?.id,
+        first_name:
+          organizer?.first_name ?? "The organizer",
       },
       instances: event.event_instances || [],
     },

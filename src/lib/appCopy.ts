@@ -7,11 +7,11 @@
 
 export const appCopy = {
     // Brand / product name (used in titles, welcome screens, meta, etc.)
-  appName: "Palinky", // or "Palinky"
+  appName: "Cirklie", // or "Palinky"
   
   noun: {
-    singular: "Pallink",        // a Cirklie
-    plural: "Pallinkies",         // your Cirklies
+    singular: "Cirklie",        // a Cirklie
+    plural: "Cirklies",         // your Cirklies
   },
 
   verb: {

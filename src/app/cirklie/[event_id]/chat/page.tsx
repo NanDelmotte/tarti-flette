@@ -1,5 +1,3 @@
-// src/app/cirklie/[event_id]/chat/page.tsx
-
 "use client";
 
 import { useEffect, useState, useRef } from "react";
@@ -99,7 +97,6 @@ export default function ChatPage({
   return (
     <main className="min-h-screen bg-global">
       <ChatFrame>
-        {/* FULL-WIDTH, NO CENTERED COLUMN */}
         <div
           style={{
             width: "100%",
@@ -124,14 +121,33 @@ export default function ChatPage({
             style={{
               fontSize: "1.4rem",
               fontWeight: 700,
-              marginBottom: "6px",
+              marginBottom: "2px",
               textAlign: "left",
             }}
           >
             {eventTitle}
           </h1>
 
-          <div style={{ opacity: 0.7, marginBottom: "12px", textAlign: "left" }}>
+          {/* Ambient social context */}
+          <p
+            style={{
+              fontSize: "11px",
+              opacity: 0.6,
+              marginBottom: "10px",
+              fontStyle: "italic",
+              textAlign: "left",
+            }}
+          >
+            People you know — and people they know — are here
+          </p>
+
+          <div
+            style={{
+              opacity: 0.7,
+              marginBottom: "12px",
+              textAlign: "left",
+            }}
+          >
             {instances.map((i) => (
               <div key={i.id} style={{ textAlign: "left" }}>
                 {new Date(i.datetime).toLocaleString()}
@@ -151,7 +167,7 @@ export default function ChatPage({
               textAlign: "left",
             }}
           >
-            {loading && <p style={{ textAlign: "left" }}>Loading…</p>}
+            {loading && <p>Loading…</p>}
 
             {messages.map((m, i) => {
               const prev = messages[i - 1];
@@ -164,14 +180,12 @@ export default function ChatPage({
                 <div
                   key={m.id}
                   style={{
-                    width: "100%",
-                    textAlign: "left",
                     marginBottom: showAuthor ? "12px" : "6px",
                   }}
                 >
                   {showAuthor && (
                     <>
-                      <div style={{ fontWeight: 600, textAlign: "left" }}>
+                      <div style={{ fontWeight: 600 }}>
                         {authorLabel}{" "}
                         <span style={{ opacity: 0.6 }}>
                           ({formatChatTime(m.created_at)})
@@ -189,9 +203,7 @@ export default function ChatPage({
                     </>
                   )}
 
-                  <div style={{ width: "100%", textAlign: "left" }}>
-                    {m.message}
-                  </div>
+                  <div>{m.message}</div>
                 </div>
               );
             })}
@@ -208,7 +220,6 @@ export default function ChatPage({
               flexDirection: "column",
               gap: "10px",
               marginTop: "12px",
-              textAlign: "left",
             }}
           >
             <input
@@ -222,7 +233,6 @@ export default function ChatPage({
                 borderRadius: "999px",
                 border: "1px solid rgba(0,0,0,0.25)",
                 fontSize: "12px",
-                textAlign: "left",
               }}
             />
 

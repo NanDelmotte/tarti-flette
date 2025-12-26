@@ -1,4 +1,3 @@
-// src/app/cirklie/[event_id]/rsvp/respond/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -6,6 +5,11 @@ import Frame from "../../../../../components/Frame";
 
 type Step = "choose" | "contact" | "done";
 type Response = { instanceId: string; status: "yes" | "maybe" | "no" };
+
+type OrganizerEvent = {
+  id: string;
+  title: string;
+};
 
 export default function RsvpRespondPage({
   params,
@@ -20,18 +24,13 @@ export default function RsvpRespondPage({
   const [step, setStep] = useState<Step>("choose");
 
   const [me, setMe] = useState<{ first_name: string } | null>(null);
-  const [previousRsvp, setPreviousRsvp] = useState<
-    "yes" | "maybe" | "no" | null
-  >(null);
+  const [otherEvents, setOtherEvents] = useState<OrganizerEvent[]>([]);
+  const [interestedIn, setInterestedIn] = useState<string[]>([]);
 
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [comment, setComment] = useState("");
-
-  const [submitting, setSubmitting] = useState(false);
   const [gateReady, setGateReady] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  // 🔒 Gate
+  /* Gate */
   useEffect(() => {
     if (searchParams?.mode === "anon") {
       setGateReady(true);
@@ -45,14 +44,12 @@ export default function RsvpRespondPage({
           setMe({ first_name: d.firstName });
           setGateReady(true);
         } else {
-          window.location.replace(
-            `/cirklie/${params.event_id}/rsvp`
-          );
+          window.location.replace(`/cirklie/${params.event_id}/rsvp`);
         }
       });
   }, [params.event_id, searchParams]);
 
-  // Load event
+  /* Load event */
   useEffect(() => {
     if (!gateReady) return;
 
@@ -64,37 +61,31 @@ export default function RsvpRespondPage({
       });
   }, [params.event_id, gateReady]);
 
-  // Load previous RSVP (verified only)
+  /* Load organizer events */
   useEffect(() => {
-    if (!me) return;
+    if (!event?.organizer?.id || searchParams?.mode === "anon") return;
 
-    fetch("/api/rsvps/mine")
+    fetch(`/api/events/by-organizer/${event.organizer.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (!d?.events) return;
-
-        const match = d.events.find(
-          (e: any) => e.event_id === params.event_id
-        );
-
-        if (!match) return;
-
-        setPreviousRsvp(match.status);
-
-        setResponses(
-          instances.map((inst: any) => ({
-            instanceId: inst.id,
-            status: match.status,
-          }))
+        setOtherEvents(
+          d.events.filter((e: OrganizerEvent) => e.id !== params.event_id)
         );
       });
-  }, [me, params.event_id, instances]);
+  }, [event, params.event_id, searchParams]);
 
   function setResponse(instanceId: string, status: Response["status"]) {
     setResponses((prev) => [
       ...prev.filter((r) => r.instanceId !== instanceId),
       { instanceId, status },
     ]);
+  }
+
+  function toggleInterest(id: string) {
+    setInterestedIn((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
   }
 
   async function submitAll() {
@@ -108,9 +99,6 @@ export default function RsvpRespondPage({
         body: JSON.stringify({
           event_instance_id: r.instanceId,
           status: r.status,
-          first_name: me ? me.first_name : firstName.trim(),
-          last_name: me ? undefined : lastName.trim(),
-          comment: comment.trim(),
         }),
       });
     }
@@ -128,26 +116,16 @@ export default function RsvpRespondPage({
   }
 
   const organizerName = event.organizer?.first_name ?? "The organizer";
-  const finalStatus =
-    responses.length > 0 ? responses[0].status.toUpperCase() : null;
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <Frame>
         <p className="text-sm opacity-70 mb-2">
-          <b>{organizerName}</b> invited you to
+          <b>{organizerName}</b> is hosting
         </p>
 
-        <h1 className="h1 text-campaign mb-2">{event.title}</h1>
+        <h1 className="h1 text-campaign mb-4">{event.title}</h1>
 
-        {previousRsvp && step === "choose" && (
-          <p className="text-sm font-medium mb-4 text-center">
-            You previously RSVPd:{" "}
-            <span className="uppercase">{previousRsvp}</span>
-          </p>
-        )}
-
-        {/* CHOOSE */}
         {step === "choose" && (
           <div className="space-y-6">
             {instances.map((inst) => {
@@ -177,79 +155,52 @@ export default function RsvpRespondPage({
               );
             })}
 
-            {/* MESSAGE TO HOST */}
-            <textarea
-              className="w-full bg-button rounded-md px-3 py-2 text-sm"
-              placeholder="Message to the host (optional)"
-              rows={3}
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-            />
-
             <button
               className="button-campaign w-full"
-              onClick={() =>
-                me ? submitAll() : setStep("contact")
-              }
+              onClick={submitAll}
             >
               Continue
             </button>
+
+            {/* OTHER EVENTS — HARD LEFT-ALIGNED */}
+            {me && otherEvents.length > 0 && (
+              <div className="content-left">
+  <p className="text-med font-medium">
+    {organizerName} also hosts
+  </p>
+
+  <p className="text-med opacity-70">
+    Interested in any of these? We will let {organizerName} know
+  </p>
+
+               <div className="checkbox-list" text-xs opacity-70>
+    {otherEvents.map((e) => (
+      <>
+        <input
+          key={e.id + "-box"}
+          type="checkbox"
+          checked={interestedIn.includes(e.id)}
+          onChange={() => toggleInterest(e.id)}
+        />
+        <span key={e.id + "-label"}>{e.title}</span>
+      </>
+    ))}
+                  
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* CONTACT (anon identity only) */}
-        {step === "contact" && !me && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitAll();
-            }}
-            className="space-y-3"
-          >
-            <input
-              className="w-full bg-button rounded-md px-3 py-2"
-              placeholder="First name"
-              required
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-            />
-
-            <input
-              className="w-full bg-button rounded-md px-3 py-2"
-              placeholder="Last name"
-              required
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-            />
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="button-campaign w-full"
-            >
-              Confirm RSVP
-            </button>
-          </form>
-        )}
-
-        {/* DONE */}
         {step === "done" && (
-          <div className="text-center space-y-4">
+          <div className="text-centerspace-y-4">
             <p className="font-medium">
               {organizerName} has received your RSVP
-              {finalStatus && (
-                <>
-                  {" "}
-                  of <span className="uppercase">{finalStatus}</span>
-                </>
-              )}
             </p>
 
-            {me && (
-              <a href="/dashboard" className="underline text-sm">
-                Go to my dashboard
-              </a>
-            )}
+            <a href="/dashboard" className="underline text-sm">
+              Go to my dashboard
+            </a>
           </div>
         )}
       </Frame>

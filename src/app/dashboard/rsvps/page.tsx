@@ -1,4 +1,3 @@
-// src/app/dashboard/rsvps/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,6 +9,12 @@ type RsvpEvent = {
   next_datetime: string | null;
   status: "yes" | "maybe" | "no";
 };
+
+function humanStatus(status: RsvpEvent["status"]) {
+  if (status === "yes") return "You’re in";
+  if (status === "maybe") return "You might go";
+  return "You said no";
+}
 
 export default function DashboardRsvpsPage() {
   const [events, setEvents] = useState<RsvpEvent[]>([]);
@@ -27,52 +32,50 @@ export default function DashboardRsvpsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center p-6 bg-global text-default">
-        <Frame>Loading your RSVPs…</Frame>
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <Frame>Loading…</Frame>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 bg-global text-default">
+    <main className="min-h-screen flex items-center justify-center p-6">
       <Frame>
         <a href="/dashboard" className="text-xs underline opacity-70">
-          ← Back to dashboard
+          ← Back
         </a>
 
-        <h1 className="h1 text-campaign mt-2">
-          Events you’ve RSVP’d to
+        <h1 className="h1 text-campaign mt-3">
+          Things you might be joining
         </h1>
 
         <div className="mt-6 space-y-4">
           {events.length === 0 && (
             <p className="text-sm opacity-70">
-              You haven’t RSVP’d to any events yet.
+              Nothing here yet
             </p>
           )}
 
           {events.map((event) => (
             <div
               key={event.event_id}
-              className="bg-button rounded-xl px-4 py-4 space-y-2"
+              className="bg-button rounded-xl px-4 py-4 space-y-1"
             >
-              <h2 className="font-medium">{event.title}</h2>
+              <p className="font-medium">
+                {event.title}
+              </p>
 
               {event.next_datetime && (
                 <p className="text-xs opacity-70">
-                  Next date:{" "}
                   {new Date(event.next_datetime).toLocaleString()}
                 </p>
               )}
 
-              <p className="text-sm font-medium">
-                You RSVPd:{" "}
-                <span className="uppercase">
-                  {event.status}
-                </span>
+              <p className="text-sm opacity-80">
+                {humanStatus(event.status)}
               </p>
 
-              <div className="flex gap-4 text-xs">
+              <div className="flex gap-4 text-xs mt-2">
                 <button
                   className="underline"
                   onClick={() =>
@@ -80,7 +83,7 @@ export default function DashboardRsvpsPage() {
                       `/cirklie/${event.event_id}`)
                   }
                 >
-                  Open event
+                  View
                 </button>
 
                 <button
@@ -90,7 +93,7 @@ export default function DashboardRsvpsPage() {
                       `/cirklie/${event.event_id}/rsvp/respond`)
                   }
                 >
-                  Change RSVP
+                  Change your mind?
                 </button>
               </div>
             </div>
