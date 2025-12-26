@@ -1,7 +1,7 @@
+"use client";
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-
-"use client";
 
 import { useEffect, useState } from "react";
 import Frame from "../../components/Frame";
@@ -31,7 +31,7 @@ export default function CreateEventPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  /* Init Supabase ONLY on client */
+  // Init Supabase ONLY on client
   useEffect(() => {
     const client = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -40,7 +40,7 @@ export default function CreateEventPage() {
     setSupabase(client);
   }, []);
 
-  /* Load profile */
+  // Load profile
   useEffect(() => {
     if (!supabase) return;
 
@@ -59,20 +59,6 @@ export default function CreateEventPage() {
 
     loadProfile();
   }, [supabase]);
-
-  function handleDateChange(index: number, value: string) {
-    const copy = [...dates];
-    copy[index] = value;
-    setDates(copy);
-  }
-
-  function addDate() {
-    setDates((prev) => [...prev, ""]);
-  }
-
-  function removeDate(index: number) {
-    setDates((prev) => prev.filter((_, i) => i !== index));
-  }
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
