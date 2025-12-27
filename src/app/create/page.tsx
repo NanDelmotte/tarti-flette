@@ -4,22 +4,12 @@
 import { useEffect, useState } from "react";
 import Frame from "../../components/Frame";
 import { appCopy } from "@/lib/appCopy";
-import { createBrowserClient } from "@supabase/ssr";
 
-/**
-
-This page is runtime-only.
-
-Supabase is created in the browser so Fly does not need env vars at build time.
-*/
 export const dynamic = "force-dynamic";
 
 type Visibility = "inner" | "friends" | "public";
 
 export default function CreateEventPage() {
-const [supabase, setSupabase] =
-useState<ReturnType<typeof createBrowserClient> | null>(null);
-
 const [needsProfile, setNeedsProfile] = useState(false);
 const [profileLoading, setProfileLoading] = useState(true);
 
@@ -39,36 +29,27 @@ useState<Visibility>("friends");
 const [loading, setLoading] = useState(false);
 const [error, setError] = useState<string | null>(null);
 
-/* Create Supabase client at runtime (browser only) */
+// Ask the server whether the user already has a profile
 useEffect(() => {
-const client = createBrowserClient(
-process.env.NEXT_PUBLIC_SUPABASE_URL!,
-process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-setSupabase(client);
-}, []);
+async function checkProfile() {
+try {
+const res = await fetch("/api/profile/check", {
+credentials: "include",
+});
 
-/* Load profile once Supabase is ready */
-useEffect(() => {
-if (!supabase) return;
-
-async function loadProfile() {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("first_name,last_name")
-    .single();
-
-  if (error || !data?.first_name || !data?.last_name) {
-    setNeedsProfile(true);
+    const data = await res.json();
+    setNeedsProfile(!data.hasProfile);
+  } catch {
+    setError("Failed to load profile");
+  } finally {
+    setProfileLoading(false);
   }
-
-  setProfileLoading(false);
 }
 
-loadProfile();
+checkProfile();
 
 
-}, [supabase]);
+}, []);
 
 function handleDateChange(index: number, value: string) {
 const copy = [...dates];
@@ -164,130 +145,6 @@ onChange={(e) => setFirstName(e.target.value)}
       </>
     )}
 
-    <div className="space-y-2">
-      <label className="form-section-title">
-        {appCopy.noun.singular} title
-      </label>
-      <input
-        type="text"
-        required
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-    </div>
-
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Description
-      </label>
-      <textarea
-        rows={2}
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-    </div>
-
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Location
-      </label>
-      <input
-        type="text"
-        required
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-      />
-    </div>
-
-    <div className="space-y-2">
-      <span className="text-sm font-medium">
-        Is this a series or a one-off?
-      </span>
-
-      <div className="flex gap-3">
-        <button
-          type="button"
-          className={!isSeries ? "button-campaign" : "bg-button w-full"}
-          onClick={() => setIsSeries(false)}
-        >
-          One-off
-        </button>
-
-        <button
-          type="button"
-          className={isSeries ? "button-campaign" : "bg-button w-full"}
-          onClick={() => setIsSeries(true)}
-        >
-          Series
-        </button>
-      </div>
-    </div>
-
-    <div className="space-y-2">
-      <label className="form-section-title">
-        {isSeries ? "Dates & times" : "Date & time"}
-      </label>
-
-      {dates.map((value, index) => (
-        <div key={index} className="flex gap-2">
-          <input
-            type="datetime-local"
-            required
-            value={value}
-            onChange={(e) =>
-              handleDateChange(index, e.target.value)
-            }
-          />
-          {isSeries && dates.length > 1 && (
-            <button
-              type="button"
-              onClick={() => removeDate(index)}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      ))}
-
-      {isSeries && (
-        <button
-          type="button"
-          onClick={addDate}
-          className="text-xs underline"
-        >
-          + Add another date
-        </button>
-      )}
-    </div>
-
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Visibility
-      </label>
-      <select
-        value={visibility}
-        onChange={(e) =>
-          setVisibility(e.target.value as Visibility)
-        }
-      >
-        <option value="inner">
-          Inner circle only
-        </option>
-        <option value="friends">
-          Friends & acquaintances
-        </option>
-        <option value="public">
-          Public link (anyone)
-        </option>
-      </select>
-    </div>
-
-    {error && (
-      <p className="text-xs text-red-700">
-        {error}
-      </p>
-    )}
-
     <button
       type="submit"
       disabled={loading}
@@ -297,6 +154,12 @@ onChange={(e) => setFirstName(e.target.value)}
         ? "Creating…"
         : `Create ${appCopy.noun.singular}`}
     </button>
+
+    {error && (
+      <p className="text-xs text-red-700">
+        {error}
+      </p>
+    )}
   </form>
 </Frame>
 
