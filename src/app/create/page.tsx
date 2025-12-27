@@ -6,6 +6,8 @@ import Frame from "../../components/Frame";
 import { appCopy } from "@/lib/appCopy";
 import { createBrowserClient } from "@supabase/ssr";
 
+export const dynamic = "force-dynamic";
+
 type Visibility = "inner" | "friends" | "public";
 
 export default function CreateEventPage() {
