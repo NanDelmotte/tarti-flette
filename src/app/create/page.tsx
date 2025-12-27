@@ -13,19 +13,14 @@ const [title, setTitle] = useState("");
 const [creating, setCreating] = useState(false);
 
 useEffect(() => {
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabase = createClient(
+    "https://picgzvmhevhznzowkdhv.supabase.co",
+    "PASTE_THE_ANON_KEY_HERE"
+  );
 
-if (!url || !key) {
-  console.error("Missing Supabase env vars");
-  return;
-}
-
-const client = createClient(url, key);
-setSupabase(client);
-
-
+  setSupabase(supabase);
 }, []);
+
 
 if (!supabase) {
 return (
