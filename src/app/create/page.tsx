@@ -11,10 +11,15 @@ export const dynamic = "force-dynamic";
 type Visibility = "inner" | "friends" | "public";
 
 export default function CreateEventPage() {
-  const supabase = createBrowserClient(
+  const [supabase, setSupabase] = useState<ReturnType<typeof createBrowserClient> | null>(null);
+
+useEffect(() => {
+  const client = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+  setSupabase(client);
+}, []);
 
   const [needsProfile, setNeedsProfile] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
