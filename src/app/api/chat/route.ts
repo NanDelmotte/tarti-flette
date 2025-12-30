@@ -68,14 +68,23 @@ export async function POST(request: Request) {
     );
   }
 
+  const cookieStore = cookies();
+  const response = NextResponse.json({ ok: true });
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        get: (name) => cookies().get(name)?.value,
-        set() {},
-        remove() {},
+        get(name) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name, value, options) {
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name, options) {
+          response.cookies.set({ name, value: "", ...options });
+        },
       },
     }
   );
@@ -91,7 +100,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // Fetch author name ONCE, safely
+  // Fetch author name
   const { data: profile } = await supabase
     .from("profiles")
     .select("first_name")
@@ -100,19 +109,58 @@ export async function POST(request: Request) {
 
   const author_name = profile?.first_name ?? "Unknown";
 
-  const { error } = await supabase.from("chat_messages").insert({
-    event_id,
-    profile_id: user.id,
-    author_name,
-    message,
-  });
+  // Insert chat message
+  const { error: insertError } = await supabase
+    .from("chat_messages")
+    .insert({
+      event_id,
+      profile_id: user.id,
+      author_name,
+      message,
+    });
 
-  if (error) {
+  if (insertError) {
     return NextResponse.json(
       { error: "Failed to send message" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ ok: true });
+  // 🔔 Enqueue chat notifications (event-level)
+
+  // 1️⃣ Fetch all instances for this event
+  const { data: instances } = await supabase
+    .from("event_instances")
+    .select("id")
+    .eq("event_id", event_id);
+
+  const instanceIds = instances?.map((i) => i.id) ?? [];
+
+  if (instanceIds.length === 0) {
+    return response;
+  }
+
+  // 2️⃣ Fetch verified RSVPs across all instances (exclude author)
+  const { data: recipients } = await supabase
+    .from("rsvps")
+    .select("profile_id")
+    .in("event_instance_id", instanceIds)
+    .not("profile_id", "is", null)
+    .neq("profile_id", user.id);
+
+  if (recipients?.length) {
+    await supabase.from("notifications_outbox").insert(
+      recipients.map((r) => ({
+        type: "chat_message",
+        recipient_profile_id: r.profile_id,
+        event_id,
+        payload: {
+          author_name,
+          message,
+        },
+      }))
+    );
+  }
+
+  return response;
 }

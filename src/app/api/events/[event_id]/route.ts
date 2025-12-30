@@ -1,6 +1,8 @@
+// src/app/api/events/[event_id]/route.ts
+
 import { NextResponse } from "next/server";
-import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
 export async function GET(
   request: Request,
@@ -20,7 +22,7 @@ export async function GET(
     }
   );
 
-  // 1️⃣ Event + instances
+  // 1️⃣ Event + instances (authoritative)
   const { data: event, error: eventError } = await supabase
     .from("events")
     .select(`
@@ -45,7 +47,7 @@ export async function GET(
     );
   }
 
-  // 2️⃣ Organizer (WITH id)
+  // 2️⃣ Organizer
   const { data: organizer } = await supabase
     .from("profiles")
     .select("id, first_name")
@@ -53,16 +55,18 @@ export async function GET(
     .maybeSingle();
 
   // 3️⃣ RSVPs
-  const instanceIds = (event.event_instances || []).map(
+  const instanceIds = event.event_instances.map(
     (i: any) => i.id
   );
 
-  const { data: rsvpRows } = await supabase
-    .from("rsvps")
-    .select(
-      "event_instance_id, status, first_name, last_name"
-    )
-    .in("event_instance_id", instanceIds);
+  const { data: rsvpRows } = instanceIds.length
+    ? await supabase
+        .from("rsvps")
+        .select(
+          "event_instance_id, status, first_name, last_name"
+        )
+        .in("event_instance_id", instanceIds)
+    : { data: [] };
 
   const rsvps: Record<
     string,
@@ -77,15 +81,13 @@ export async function GET(
     const bucket = rsvps[row.event_instance_id];
     if (!bucket) continue;
 
-    const status = String(row.status || "").toLowerCase();
     const name = `${row.first_name} ${row.last_name ?? ""}`.trim();
 
-    if (status === "yes") bucket.yes.push(name);
-    else if (status === "maybe") bucket.maybe.push(name);
-    else if (status === "no") bucket.no.push(name);
+    if (row.status === "yes") bucket.yes.push(name);
+    else if (row.status === "maybe") bucket.maybe.push(name);
+    else if (row.status === "no") bucket.no.push(name);
   }
 
-  // 4️⃣ Response
   return NextResponse.json({
     event: {
       id: event.id,
@@ -97,7 +99,7 @@ export async function GET(
         first_name:
           organizer?.first_name ?? "The organizer",
       },
-      instances: event.event_instances || [],
+      instances: event.event_instances,
     },
     rsvps,
   });

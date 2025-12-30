@@ -58,10 +58,10 @@ export default function RsvpGatePage({
           <button
             className="button-campaign w-full"
             onClick={() => {
-              window.location.href = `/cirklie/${params.event_id}/rsvp/login`;
+              window.location.href = `/cirklie/${params.event_id}/rsvp/join`;
             }}
           >
-            Join through SMS
+             Login or Sign Up to {appCopy.appName} 
           </button>
 
           <p className="text-xs opacity-70">
@@ -71,17 +71,19 @@ export default function RsvpGatePage({
         </div>
 
         {/* Option 2 */}
-        <div className="mt-5 space-y-2">
-          <a
-            href={`/cirklie/${params.event_id}/rsvp/respond?mode=anon`}
-            className="underline text-sm block"
+        <button
+            className="button-campaign w-full"
+            onClick={() => {
+              window.location.href = `/cirklie/${params.event_id}/rsvp/respond?mode=anon`;
+            }}
           >
-            Respond just this once
-          </a>
-
-          <p className="text-xs opacity-70">
+            Simple response
+          </button>
+           <p className="text-xs opacity-70">
             A quick Yes / Maybe / No — no account needed
           </p>
+          <div className="mt-5 space-y-2">
+          
         </div>
       </Frame>
     </main>

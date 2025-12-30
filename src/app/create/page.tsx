@@ -1,246 +1,217 @@
+// src/app/create/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Frame from "../../components/Frame";
 import { appCopy } from "@/lib/appCopy";
 
 type Visibility = "inner" | "friends" | "public";
 
 export default function CreateEventPage() {
-const [firstName, setFirstName] = useState("");
-const [lastName, setLastName] = useState("");
+  const [firstName, setFirstName] = useState<string | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
 
-const [title, setTitle] = useState("");
-const [description, setDescription] = useState("");
-const [location, setLocation] = useState("");
+  const [title, setTitle] = useState("");
+  const [dates, setDates] = useState<string[]>([""]);
 
-const [isSeries, setIsSeries] = useState(false);
-const [dates, setDates] = useState<string[]>([""]);
+  const [description, setDescription] = useState("");
+  const [location, setLocation] = useState("");
+  const [visibility, setVisibility] =
+    useState<Visibility>("friends");
 
-const [visibility, setVisibility] =
-useState<Visibility>("friends");
+  const [isSeries, setIsSeries] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    async function load() {
+      const res = await fetch("/api/me");
+      const data = await res.json();
 
-function handleDateChange(index: number, value: string) {
-const copy = [...dates];
-copy[index] = value;
-setDates(copy);
-}
+      if (!data?.user) {
+        window.location.replace("/login?redirect=/create");
+        return;
+      }
 
-function addDate() {
-setDates((prev) => [...prev, ""]);
-}
+      setFirstName(data.user.first_name);
+      setLoadingUser(false);
+    }
 
-function removeDate(index: number) {
-setDates((prev) => prev.filter((_, i) => i !== index));
-}
+    load();
+  }, []);
 
-async function handleCreate(e: React.FormEvent) {
-e.preventDefault();
-setLoading(true);
-setError(null);
-
-const payload = {
-  first_name: firstName.trim() || null,
-  last_name: lastName.trim() || null,
-  title,
-  description,
-  location,
-  visibility,
-  isSeries,
-  dates,
-};
-
-try {
-  const res = await fetch("/api/events/create", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    credentials: "include",
-    body: JSON.stringify(payload),
-  });
-
-  const data = await res.json();
-
-  if (!res.ok) {
-    setError(data.error || "Failed to create event");
-    return;
+  function handleDateChange(index: number, value: string) {
+    const copy = [...dates];
+    copy[index] = value;
+    setDates(copy);
   }
 
-  window.location.href = `/cirklie/${data.event_id}/share`;
-} catch {
-  setError("Network error");
-} finally {
-  setLoading(false);
-}
+  function addDate() {
+    setDates((prev) => [...prev, ""]);
+  }
 
+  function removeDate(index: number) {
+    setDates((prev) => prev.filter((_, i) => i !== index));
+  }
 
-}
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-return (
-<Frame>
-<form onSubmit={handleCreate} className="space-y-6 w-full">
-<div className="space-y-2">
-<label className="form-section-title">
-Your first name
-</label>
-<input
-type="text"
-required
-value={firstName}
-onChange={(e) => setFirstName(e.target.value)}
-/>
-</div>
+    const payload = {
+      title,
+      dates,
+      description: description || null,
+      location: location || null,
+      visibility,
+      isSeries,
+    };
 
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Your last name
-      </label>
-      <input
-        type="text"
-        required
-        value={lastName}
-        onChange={(e) => setLastName(e.target.value)}
-      />
-    </div>
+    try {
+      const res = await fetch("/api/events/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
 
-    <div className="space-y-2">
-      <label className="form-section-title">
-        {appCopy.noun.singular} title
-      </label>
-      <input
-        type="text"
-        required
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-      />
-    </div>
+      const data = await res.json();
 
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Description
-      </label>
-      <textarea
-        rows={2}
-        value={description}
-        onChange={(e) => setDescription(e.target.value)}
-      />
-    </div>
+      if (!res.ok) {
+        setError(data.error || "Failed to create event");
+        return;
+      }
 
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Location
-      </label>
-      <input
-        type="text"
-        required
-        value={location}
-        onChange={(e) => setLocation(e.target.value)}
-      />
-    </div>
+      window.location.href = `/cirklie/${data.event_id}/share`;
+    } catch {
+      setError("Network error");
+    } finally {
+      setLoading(false);
+    }
+  }
 
-    <div className="space-y-2">
-      <span className="text-sm font-medium">
-        Is this a series or a one-off?
-      </span>
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.replace("/login");
+  }
 
-      <div className="flex gap-3">
-        <button
-          type="button"
-          className={!isSeries ? "button-campaign" : "bg-button w-full"}
-          onClick={() => setIsSeries(false)}
-        >
-          One-off
-        </button>
+  if (loadingUser) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6">
+        <Frame>Loading…</Frame>
+      </main>
+    );
+  }
 
-        <button
-          type="button"
-          className={isSeries ? "button-campaign" : "bg-button w-full"}
-          onClick={() => setIsSeries(true)}
-        >
-          Series
-        </button>
-      </div>
-    </div>
-
-    <div className="space-y-2">
-      <label className="form-section-title">
-        {isSeries ? "Dates & times" : "Date & time"}
-      </label>
-
-      {dates.map((value, index) => (
-        <div key={index} className="flex gap-2">
+  return (
+    <main className="min-h-screen flex items-center justify-center p-6">
+      <Frame userName={firstName} onLogout={handleLogout} showHome>
+        <form onSubmit={handleCreate} className="space-y-5 w-full">
           <input
-            type="datetime-local"
+            className="w-full bg-button rounded-md px-3 py-3"
+            placeholder={`${appCopy.noun.singular} title`}
+            type="text"
             required
-            value={value}
-            onChange={(e) =>
-              handleDateChange(index, e.target.value)
-            }
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
           />
-          {isSeries && dates.length > 1 && (
-            <button
-              type="button"
-              onClick={() => removeDate(index)}
-            >
-              ✕
-            </button>
+
+          <div className="space-y-2">
+            {dates.map((value, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  className="flex-1 bg-button rounded-md px-3 py-3"
+                  type="datetime-local"
+                  required
+                  value={value}
+                  onChange={(e) =>
+                    handleDateChange(index, e.target.value)
+                  }
+                />
+                {isSeries && dates.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeDate(index)}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <div className="flex gap-3 text-xs">
+              <button
+                type="button"
+                className="underline"
+                onClick={() => setIsSeries(!isSeries)}
+              >
+                {isSeries ? "One date only" : "Add multiple dates"}
+              </button>
+
+              {isSeries && (
+                <button
+                  type="button"
+                  className="underline"
+                  onClick={addDate}
+                >
+                  + Add date
+                </button>
+              )}
+            </div>
+          </div>
+
+          <textarea
+            className="w-full bg-button rounded-md px-3 py-2 text-sm"
+            rows={2}
+            placeholder="Description (optional)"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+
+          <input
+            className="w-full bg-button rounded-md px-3 py-3"
+            placeholder="Location (optional)"
+            type="text"
+            value={location}
+            onChange={(e) => setLocation(e.target.value)}
+          />
+
+          <select
+            className="w-full bg-button rounded-md px-3 py-3"
+            value={visibility}
+            onChange={(e) =>
+              setVisibility(e.target.value as Visibility)
+            }
+          >
+            <option value="friends">
+              Friends & acquaintances
+            </option>
+            <option value="inner">
+              Inner circle only
+            </option>
+            <option value="public">
+              Public link (anyone)
+            </option>
+          </select>
+
+          {error && (
+            <p className="text-xs text-red-700 text-center">
+              {error}
+            </p>
           )}
-        </div>
-      ))}
 
-      {isSeries && (
-        <button
-          type="button"
-          onClick={addDate}
-          className="text-xs underline"
-        >
-          + Add another date
-        </button>
-      )}
-    </div>
-
-    <div className="space-y-2">
-      <label className="form-section-title">
-        Visibility
-      </label>
-      <select
-        value={visibility}
-        onChange={(e) =>
-          setVisibility(e.target.value as Visibility)
-        }
-      >
-        <option value="inner">
-          Inner circle only
-        </option>
-        <option value="friends">
-          Friends & acquaintances
-        </option>
-        <option value="public">
-          Public link (anyone)
-        </option>
-      </select>
-    </div>
-
-    {error && (
-      <p className="text-xs text-red-700">
-        {error}
-      </p>
-    )}
-
-    <button
-      type="submit"
-      disabled={loading}
-      className="button-campaign w-full"
-    >
-      {loading
-        ? "Creating…"
-        : `Create ${appCopy.noun.singular}`}
-    </button>
-  </form>
-</Frame>
-
-
-);
+          <button
+            type="submit"
+            disabled={loading}
+            className="button-campaign w-full"
+          >
+            {loading
+              ? "Creating…"
+              : `Create ${appCopy.noun.singular}`}
+          </button>
+        </form>
+      </Frame>
+    </main>
+  );
 }

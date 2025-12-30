@@ -55,10 +55,24 @@ export async function POST(
 
   const profileId = user?.id ?? null;
 
-  // 1️⃣ Look for existing RSVP
+  // 1️⃣ Fetch organizer
+  const { data: event } = await supabase
+    .from("events")
+    .select("organizer_id")
+    .eq("id", params.event_id)
+    .single();
+
+  if (!event?.organizer_id) {
+    return NextResponse.json(
+      { error: "Event not found" },
+      { status: 404 }
+    );
+  }
+
+  // 2️⃣ Look for existing RSVP
   let existingQuery = supabase
     .from("rsvps")
-    .select("id")
+    .select("id, status")
     .eq("event_instance_id", event_instance_id)
     .limit(1);
 
@@ -73,7 +87,10 @@ export async function POST(
 
   const { data: existing } = await existingQuery.maybeSingle();
 
-  // 2️⃣ Update or insert
+  const isNew = !existing;
+  const statusChanged = existing && existing.status !== status;
+
+  // 3️⃣ Update or insert RSVP
   if (existing?.id) {
     const { error } = await supabase
       .from("rsvps")
@@ -101,6 +118,22 @@ export async function POST(
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+  }
+
+  // 4️⃣ Enqueue notification (side effect)
+  if (isNew || statusChanged) {
+    await supabase.from("notifications_outbox").insert({
+      type: "rsvp_changed",
+      recipient_profile_id: event.organizer_id,
+      event_id: params.event_id,
+      payload: {
+        event_instance_id,
+        status,
+        first_name: String(first_name).trim(),
+        last_name: String(last_name || "").trim(),
+        is_new: isNew,
+      },
+    });
   }
 
   return response;

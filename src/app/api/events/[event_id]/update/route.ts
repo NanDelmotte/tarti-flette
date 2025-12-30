@@ -1,9 +1,13 @@
-// src/app/api/events/create/route.ts
+// src/app/api/events/[event_id]/update/route.ts
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  { params }: { params: { event_id: string } }
+) {
   const cookieStore = cookies();
 
   const supabase = createServerClient(
@@ -14,38 +18,28 @@ export async function POST(request: Request) {
         get(name) {
           return cookieStore.get(name)?.value;
         },
-        set(name, value, options) {
-          cookieStore.set({ name, value, ...options });
-        },
-        remove(name, options) {
-          cookieStore.set({ name, value: "", ...options });
-        },
       },
     }
   );
 
   const {
     data: { user },
-    error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError || !user) {
+  if (!user) {
     return NextResponse.json(
-      { error: "You must be logged in" },
+      { error: "Not authenticated" },
       { status: 401 }
     );
   }
 
-  const body = await request.json();
-
   const {
     title,
-    description,
-    location,
     visibility,
-    isSeries,
     dates,
-  } = body;
+    location,
+    description,
+  } = await request.json();
 
   if (!title || !dates || dates.length === 0) {
     return NextResponse.json(
@@ -54,34 +48,44 @@ export async function POST(request: Request) {
     );
   }
 
-  // 1️⃣ CREATE EVENT
-  const {
-    data: event,
-    error: eventError,
-  } = await supabase
+  const { data: event } = await supabase
     .from("events")
-    .insert({
-      organizer_id: user.id,
-      title,
-      description,
-      visibility,
-      is_series: isSeries,
-    })
-    .select("id")
+    .select("organizer_id")
+    .eq("id", params.event_id)
     .single();
 
-  if (eventError || !event) {
+  if (!event || event.organizer_id !== user.id) {
     return NextResponse.json(
-      { error: "Could not create event" },
+      { error: "Forbidden" },
+      { status: 403 }
+    );
+  }
+
+  const { error: eventError } = await supabase
+    .from("events")
+    .update({
+      title,
+      visibility,
+      description,
+    })
+    .eq("id", params.event_id);
+
+  if (eventError) {
+    return NextResponse.json(
+      { error: "Failed to update event" },
       { status: 500 }
     );
   }
 
-  // 2️⃣ CREATE INSTANCES
+  await supabase
+    .from("event_instances")
+    .delete()
+    .eq("event_id", params.event_id);
+
   const instanceRows = dates.map((d: string) => ({
-    event_id: event.id,
+    event_id: params.event_id,
     datetime: d,
-    location,
+    location: location || null,
   }));
 
   const { error: instanceError } = await supabase
@@ -90,10 +94,10 @@ export async function POST(request: Request) {
 
   if (instanceError) {
     return NextResponse.json(
-      { error: "Could not create event instances" },
+      { error: "Failed to update dates" },
       { status: 500 }
     );
   }
 
-  return NextResponse.json({ event_id: event.id });
+  return NextResponse.json({ ok: true });
 }

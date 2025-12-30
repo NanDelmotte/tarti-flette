@@ -1,25 +1,23 @@
-// src/app/login/page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
-import Frame from "../../components/Frame";
+import { FormEvent, useEffect, useState } from "react";
+import Frame from "../../../../../components/Frame";
 import { createBrowserClient } from "@supabase/ssr";
-import { useSearchParams } from "next/navigation";
 
-export default function GenericLoginPage() {
+export default function RsvpJoinPage({
+  params,
+}: {
+  params: { event_id: string };
+}) {
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") || "/dashboard";
+  const redirect = `/cirklie/${params.event_id}/rsvp/respond`;
 
-  const initialMode =
-  searchParams.get("mode") === "signup" ? "signup" : "login";
-
-const [mode, setMode] = useState<"login" | "signup">(initialMode);
-
+  const [event, setEvent] = useState<any>(null);
+  const [mode, setMode] = useState<"login" | "signup">("login");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,10 +26,18 @@ const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetch(`/api/events/${params.event_id}`)
+      .then((r) => r.json())
+      .then((d) => setEvent(d.event));
+  }, [params.event_id]);
+
   async function ensureProfile() {
     const res = await fetch("/api/profile/ensure", { method: "POST" });
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || "Failed to create profile");
+    if (!res.ok) {
+      throw new Error(data?.error || "Failed to create profile");
+    }
   }
 
   async function onSubmit(e: FormEvent) {
@@ -82,7 +88,12 @@ const [mode, setMode] = useState<"login" | "signup">(initialMode);
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-global">
       <Frame>
-        <p className="text-sm text-center mb-2">Welcome</p>
+        {event && (
+          <p className="text-sm opacity-70 mb-2 text-center">
+            You’re joining{" "}
+            <b>{event.organizer?.first_name ?? "an event"}</b>’s Cirklie
+          </p>
+        )}
 
         {error && (
           <p className="text-xs text-red-700 text-center mb-3">{error}</p>
@@ -136,7 +147,9 @@ const [mode, setMode] = useState<"login" | "signup">(initialMode);
           />
 
           <button className="button-campaign w-full" disabled={loading}>
-            {mode === "login" ? "Log in" : "Create account"}
+            {mode === "login"
+              ? "Log in & Continue"
+              : "Create account & Continue"}
           </button>
         </form>
       </Frame>

@@ -10,7 +10,7 @@
 html.palette-california-dreaming {
   --global-bg: #E15E46;   /* sunset orange */
   --box-bg:    #afbeb2;   /* sand */
-  --button-bg: #D34B38;   /* burnt red */
+  --button-bg: #a37771;   /* burnt red */
   --button-txt:#FEDFC1;   /* pale sand */
   --text:      #4A1D0C;   /* dark espresso */
 }
@@ -21,7 +21,7 @@ html.palette-california-dreaming {
 html.palette-coastal-teal {
   --global-bg: #004F6D;
   --box-bg:    #ba9bb9;
-  --button-bg: #147A8A;
+  --button-bg: #c9bb3c;
   --button-txt:#FFE1B0;
   --text:      #163640;
 }
@@ -32,7 +32,7 @@ html.palette-coastal-teal {
 html.palette-sunset-punch {
   --global-bg: #FF6F61;
   --box-bg:    #aae1a4;
-  --button-bg: #FF9770;
+  --button-bg: #e58f0d;
   --button-txt:#561D12;
   --text:      #3A120B;
 }
@@ -43,7 +43,7 @@ html.palette-sunset-punch {
 html.palette-midnight-electric {
   --global-bg: #003049;
   --box-bg:    #e5cac2;
-  --button-bg: #0286CD;
+  --button-bg: #90c694;
   --button-txt:#FFE7C2;
   --text:      #072A38;
 }
@@ -53,7 +53,7 @@ html.palette-midnight-electric {
 html.palette-party-poster {
   --global-bg: #2B2A4C;
   --box-bg:    #add3bf;
-  --button-bg: #FD3C45;
+  --button-bg: #f57d83e9;
   --button-txt:#FFDDC1;
   --text:      #1B1A36;
 }
@@ -62,11 +62,11 @@ html.palette-party-poster {
   PALETTE 6 — RETRO MIAMI
 ────────────────────────────────────────── */
 html.palette-retro-miami {
-  --global-bg: #05668D;
-  --box-bg:    #FDEBD0;
+  --global-bg: #f3692f;
+  --box-bg:    #fdd0d1;
   --button-bg: #44A1A0;
   --button-txt:#FFF2D7;
-  --text:      #072B3A;
+  --text:      #042330;
 }
 
 /* ──────────────────────────────────────────
@@ -75,7 +75,7 @@ html.palette-retro-miami {
 html.palette-urban-rally {
   --global-bg: #5C3C92;
   --box-bg:    #e4b892;
-  --button-bg: #E94F37;
+  --button-bg: #e94f3776;
   --button-txt:#FFECD1;
   --text:      #2B1A40;
 }
@@ -86,7 +86,7 @@ html.palette-urban-rally {
 html.palette-golden-hour {
   --global-bg: #C36A2D;
   --box-bg:    #FFF4DC;
-  --button-bg: #9A3C1D;
+  --button-bg: #a2ac92;
   --button-txt:#FFE9C6;
   --text:      #4A220E;
 }

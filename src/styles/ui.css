@@ -8,6 +8,12 @@
   color: var(--text) !important;
 }
 
+/* Utility bar (username + logout) should match logo color */
+.utility-bar,
+.utility-bar * {
+  color: var(--box-bg) !important;
+}
+
 /* -------- TYPOGRAPHY -------- */
 
 .text-campaign {
@@ -158,6 +164,7 @@
   fill: currentColor !important;
   stroke: currentColor !important;
 }
+
 /* -------- CONTENT AREA (inside poster) -------- */
 
 .frame-content {
@@ -181,6 +188,7 @@
   flex-shrink: 0;
   margin: 0;
 }
+
 /* FORCE FULL-WIDTH LEFT CONTENT INSIDE POSTER */
 
 .frame-campaign .content-left {
@@ -201,11 +209,15 @@
 .frame-campaign .checkbox-list input[type="checkbox"] {
   margin: 0;
 }
-.checkbox-list input[type="checkbox"] {
-  transform: scale(0.85);
-  margin-top: 2px;
-}
+
 .checkbox-list input[type="checkbox"] {
   transform: scale(0.8);
   opacity: 0.9;
+}
+
+/* -------- FRAME UTILITY BAR -------- */
+
+.utility-bar,
+.utility-bar * {
+  color: var(--box-bg) !important;
 }
