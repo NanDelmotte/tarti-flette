@@ -1,3 +1,4 @@
+cat > fly.toml <<'EOF'
 app = "tarti-flette"
 primary_region = "fra"
 
@@ -23,3 +24,4 @@ processes = ["app"]
 memory = "1gb"
 cpu_kind = "shared"
 cpus = 1
+EOF
