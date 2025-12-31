@@ -1,4 +1,3 @@
-// src/components/Frame.tsx
 "use client";
 
 import Logo from "./Logo";
@@ -17,16 +16,17 @@ export default function Frame({
   showHome?: boolean;
   showSettings?: boolean;
 }) {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   async function handleLogout() {
     if (onLogout) {
       onLogout();
       return;
     }
+
+    // Create Supabase client ONLY at runtime, when user clicks logout
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     await supabase.auth.signOut();
     window.location.href = "/";

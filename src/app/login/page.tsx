@@ -1,30 +1,31 @@
-// src/app/login/page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useState } from "react";
 import Frame from "../../components/Frame";
 import { createBrowserClient } from "@supabase/ssr";
 import { useSearchParams } from "next/navigation";
 
-export default function GenericLoginPage() {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+export const dynamic = "force-dynamic";
 
+export default function GenericLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <GenericLoginInner />
+    </Suspense>
+  );
+}
+
+function GenericLoginInner() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
 
   const initialMode =
-  searchParams.get("mode") === "signup" ? "signup" : "login";
+    searchParams.get("mode") === "signup" ? "signup" : "login";
 
-const [mode, setMode] = useState<"login" | "signup">(initialMode);
-
-
+  const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +39,12 @@ const [mode, setMode] = useState<"login" | "signup">(initialMode);
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // ✅ Supabase client created ONLY on user action
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     try {
       if (mode === "login") {
