@@ -28,12 +28,9 @@ export default function ShareCirkliePage({
     async function fetchEvent() {
       const res = await fetch(`/api/events/${eventId}`);
       const data = await res.json();
-      
-      console.log("EVENT API DATA:", data);
-
 
       setEvent(data.event || null);
-setInstances(data.event?.instances || []);
+      setInstances(data.event?.instances || []);
       setLoading(false);
     }
 
@@ -63,6 +60,15 @@ setInstances(data.event?.instances || []);
   }
 
   const firstInstance = instances[0];
+
+  const inviterName =
+    event.organizer_name ||
+    event.organizer?.first_name ||
+    "Someone";
+
+  const shareText = `${inviterName} is inviting you to "${event.title}".${
+    event.description ? ` ${event.description}` : ""
+  } Click the link to RSVP in ${appCopy.noun.singular}.`;
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-global text-default">
@@ -121,7 +127,7 @@ setInstances(data.event?.instances || []);
               if (navigator.share) {
                 navigator.share({
                   title: event.title,
-                  text: `Join my ${appCopy.noun.singular}!`,
+                  text: shareText,
                   url: shareUrl,
                 });
               } else {

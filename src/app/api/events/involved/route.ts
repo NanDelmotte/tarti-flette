@@ -1,3 +1,5 @@
+// src/app/api/events/involved/route.ts
+
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
@@ -26,10 +28,10 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // 1) Events I organize (KEEP working query)
+  // 1) Events I organize
   const { data: organized, error: organizedError } = await supabase
     .from("events")
-    .select("id, title, organizer_id, event_instances ( datetime )")
+    .select("id, title, organizer_id, event_instances ( id, datetime )")
     .eq("organizer_id", user.id);
 
   if (organizedError) {
@@ -39,12 +41,13 @@ export async function GET() {
     );
   }
 
-  // 2) Events I RSVP’d to (KEEP working query)
+  // 2) Events I RSVP’d to
   const { data: rsvped, error: rsvpedError } = await supabase
     .from("rsvps")
     .select(
       `
       event_instances (
+        id,
         datetime,
         event_id,
         events (
@@ -58,7 +61,10 @@ export async function GET() {
     .eq("profile_id", user.id);
 
   if (rsvpedError) {
-    return NextResponse.json({ error: rsvpedError.message }, { status: 500 });
+    return NextResponse.json(
+      { error: rsvpedError.message },
+      { status: 500 }
+    );
   }
 
   const now = new Date();
@@ -67,16 +73,17 @@ export async function GET() {
     organized?.map((event: any) => {
       const futureInstances =
         event.event_instances
-          ?.map((i: any) => new Date(i.datetime))
-          .filter((d: Date) => d > now)
-          .sort((a: Date, b: Date) => a.getTime() - b.getTime()) ?? [];
+          ?.map((i: any) => ({ id: i.id, date: new Date(i.datetime) }))
+          .filter((i: any) => i.date > now)
+          .sort((a: any, b: any) => a.date.getTime() - b.date.getTime()) ?? [];
 
       return {
         id: event.id,
         title: event.title,
-        datetime: futureInstances[0] ?? null,
+        datetime: futureInstances[0]?.date ?? null,
+        instance_ids: futureInstances.map((i: any) => i.id),
         host: "me" as const,
-        organizer_id: event.organizer_id as string,
+        organizer_id: event.organizer_id,
         organizer_name: null as string | null,
       };
     }) ?? [];
@@ -92,57 +99,85 @@ export async function GET() {
         datetime: row.event_instances.datetime
           ? new Date(row.event_instances.datetime)
           : null,
-        host: event.organizer_id === user.id ? ("me" as const) : ("other" as const),
-        organizer_id: event.organizer_id as string,
+        instance_ids: [row.event_instances.id],
+        host:
+          event.organizer_id === user.id ? "me" : "other",
+        organizer_id: event.organizer_id,
         organizer_name: null as string | null,
       };
     }) ?? [];
 
-  type EventRow = {
-    id: string;
-    title: string;
-    datetime: Date | null;
-    host: "me" | "other";
-    organizer_id: string;
-    organizer_name: string | null;
-  };
-
   const allRaw = [...organizedEvents, ...rsvpedEvents].filter(
-    (e): e is EventRow => !!e
+    (e): e is NonNullable<typeof e> => e !== null
   );
 
-  // Collect organizer ids we need names for (mostly "other", but safe to do all)
+  // Collect ALL instance IDs
+  const instanceIds = Array.from(
+    new Set(allRaw.flatMap((e) => e.instance_ids))
+  );
+
+  // 3) RSVP counts via event_instances
+  const rsvpCountMap = new Map<string, number>();
+
+  if (instanceIds.length > 0) {
+    const { data: rsvps } = await supabase
+      .from("rsvps")
+      .select("event_instance_id")
+      .in("event_instance_id", instanceIds);
+
+    (rsvps || []).forEach((r: any) => {
+      const instanceId = r.event_instance_id;
+      const event = allRaw.find((e) =>
+        e.instance_ids.includes(instanceId)
+      );
+      if (!event) return;
+
+      rsvpCountMap.set(
+        event.id,
+        (rsvpCountMap.get(event.id) ?? 0) + 1
+      );
+    });
+  }
+
+  // 4) Organizer names
   const organizerIds = Array.from(
-    new Set(allRaw.map((e) => e.organizer_id).filter(Boolean))
+    new Set(allRaw.map((e) => e.organizer_id))
   );
 
-  // Lookup names in profiles in a separate query (avoids nested-select shape issues)
-  let nameMap = new Map<string, string>();
+  const nameMap = new Map<string, string>();
+
   if (organizerIds.length > 0) {
-    const { data: profs, error: profError } = await supabase
+    const { data: profs } = await supabase
       .from("profiles")
       .select("id, first_name")
       .in("id", organizerIds);
 
-    if (profError) {
-      return NextResponse.json({ error: profError.message }, { status: 500 });
-    }
-
     (profs || []).forEach((p: any) => {
-      if (p?.id && p?.first_name) nameMap.set(p.id, p.first_name);
+      if (p?.id && p?.first_name) {
+        nameMap.set(p.id, p.first_name);
+      }
     });
   }
 
-  // Attach organizer_name
-  const allWithNames = allRaw.map((e) => ({
-    ...e,
-    organizer_name: nameMap.get(e.organizer_id) ?? null,
-  }));
-
-  // Keep your existing “must have a Date” behavior
-  const all = allWithNames
-    .filter((e) => e.datetime instanceof Date && !isNaN(e.datetime.getTime()))
-    .sort((a, b) => (a.datetime as Date).getTime() - (b.datetime as Date).getTime());
+  const all = allRaw
+    .map((e) => ({
+      id: e.id,
+      title: e.title,
+      datetime: e.datetime,
+      host: e.host,
+      organizer_name: nameMap.get(e.organizer_id) ?? null,
+      rsvp_count: rsvpCountMap.get(e.id) ?? 0,
+    }))
+    .filter(
+      (e) =>
+        e.datetime instanceof Date &&
+        !isNaN(e.datetime.getTime())
+    )
+    .sort(
+      (a, b) =>
+        (a.datetime as Date).getTime() -
+        (b.datetime as Date).getTime()
+    );
 
   return NextResponse.json({ events: all });
 }

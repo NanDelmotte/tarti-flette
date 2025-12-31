@@ -1,3 +1,4 @@
+// src/app/events/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -9,6 +10,7 @@ type EventRow = {
   datetime: string;
   host: "me" | "other";
   organizer_name?: string | null;
+  rsvp_count: number;
 };
 
 export default function EventsPage() {
@@ -81,13 +83,24 @@ export default function EventsPage() {
               href={`/cirklie/${event.id}`}
               className="block"
             >
+              {/* Line 1: title */}
               <div className="font-medium">{event.title}</div>
 
+              {/* Line 2: date + host */}
               <div className="text-xs opacity-70">
                 {formatDate(event.datetime)} ·{" "}
                 {event.host === "me"
                   ? "You’re hosting"
                   : `Hosted by ${event.organizer_name ?? "someone"}`}
+              </div>
+
+              {/* Line 3: RSVP count */}
+              <div className="text-xs opacity-60">
+                {event.rsvp_count === 0
+                  ? "No responses yet"
+                  : `${event.rsvp_count} ${
+                      event.rsvp_count === 1 ? "person has" : "people have"
+                    } said if they are coming`}
               </div>
             </a>
           ))}

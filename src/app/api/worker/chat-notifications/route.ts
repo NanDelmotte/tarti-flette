@@ -67,17 +67,33 @@ export async function POST(request: Request) {
         throw new Error("Recipient has no email");
       }
 
-      const body = group.jobs
-        .map(
-          (j) =>
-            `${j.payload.author_name}: ${j.payload.message}`
-        )
-        .join("\n");
+      const chatUrl = `https://tarti-flette.fly.dev/cirklie/${group.event_id}/chat`;
+const { data: event } = await supabase
+  .from("events")
+  .select("title")
+  .eq("id", group.event_id)
+  .single();
+
+const body = [
+  event?.title ? `Event: ${event.title}` : "Event update",
+  "",
+  group.jobs
+    .map(
+      (j) =>
+        `${j.payload.author_name}: ${j.payload.message}`
+    )
+    .join("\n"),
+  "",
+  "Open the chat:",
+  chatUrl,
+].join("\n");
+
+
 
       await resend.emails.send({
-        from: "Cirklie <notifications@cirklie.com>",
+        from: "Beta testers (nancy) <notifications@cirklie.com>",
         to: user.user.email,
-        subject: "New chat messages",
+        subject: `New chat messages – ${event?.title ?? "your event"}`,
         text: body,
       });
 
