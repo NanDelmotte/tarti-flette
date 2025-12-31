@@ -1,12 +1,15 @@
-// src/app/api/worker/chat-notifications/route.ts
-
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { Resend } from "resend";
 
-export async function POST() {
+export async function POST(request: Request) {
+  const secret = request.headers.get("x-cron-secret");
+  if (!secret || secret !== process.env.CRON_SECRET) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -28,7 +31,6 @@ export async function POST() {
     return NextResponse.json({ ok: true });
   }
 
-  // Group by recipient + event
   const groups = new Map<
     string,
     {
@@ -71,13 +73,12 @@ export async function POST() {
         .join("\n");
 
       await resend.emails.send({
-        from: 'Cirklie <notifications@cirklie.com>',
+        from: "Cirklie <notifications@cirklie.com>",
         to: user.user.email,
         subject: "New chat messages",
         text: body,
       });
 
-      // Mark all grouped jobs as processed
       await supabase
         .from("notifications_outbox")
         .update({
