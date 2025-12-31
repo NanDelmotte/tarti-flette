@@ -84,7 +84,10 @@ export default function Frame({
       </div>
 
       <div className="frame-campaign w-full max-w-sm pt-4 pb-6">
-        <div className="frame-content">{children}</div>
+     <div className="frame-content w-full">
+  {children}
+</div>
+
       </div>
     </div>
   );

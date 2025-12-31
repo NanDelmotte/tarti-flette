@@ -1,3 +1,5 @@
+//src/app/api/worker/chat-notifications/route.ts
+
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
