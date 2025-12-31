@@ -16,3 +16,6 @@ processes = ["app"]
 memory = "1gb"
 cpu_kind = "shared"
 cpus = 1
+[build.args]
+NEXT_PUBLIC_SUPABASE_URL = "https://picgzvmhevhznzowkdhv.supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBpY2d6dm1oZXZoem56b3drZGh2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ5MDkxNDIsImV4cCI6MjA4MDQ4NTE0Mn0.MLCDovx0Py72UHRM98FhVyiWnQs12VfLgtDw0enzHiA"
