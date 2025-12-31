@@ -1,13 +1,9 @@
-/* src/app/globals.css */
-/* Tailwind v3 syntax — this fixes the runtime error */
-
-@tailwind base;
-@tailwind components;
+@tailwind base; 
+@tailwind components; 
 @tailwind utilities;
 
 /* GLOBAL RESET */
-html,
-body {
+html, body {
   background: var(--global-bg);
   color: var(--text);
 }

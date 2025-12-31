@@ -9,11 +9,6 @@ export default function RsvpJoinPage({
 }: {
   params: { event_id: string };
 }) {
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const redirect = `/cirklie/${params.event_id}/rsvp/respond`;
 
   const [event, setEvent] = useState<any>(null);
@@ -44,6 +39,12 @@ export default function RsvpJoinPage({
     e.preventDefault();
     setLoading(true);
     setError(null);
+
+    // ✅ Supabase client created ONLY on user action
+    const supabase = createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
 
     try {
       if (mode === "login") {
