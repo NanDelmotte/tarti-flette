@@ -44,18 +44,18 @@ export async function GET() {
   // 2) Events I RSVP’d to
   const { data: rsvped, error: rsvpedError } = await supabase
     .from("rsvps")
-    .select(
-      `
-      event_instances (
-        id,
-        datetime,
-        event_id,
-        events (
-          id,
-          title,
-          organizer_id
-        )
-      )
+    .select(`
+  event_instances (
+    id,
+    datetime,
+    event_id,
+    events (
+      id,
+      title,
+      organizer_id,
+      event_instances ( id )
+    )
+  )
     `
     )
     .eq("profile_id", user.id);
@@ -81,7 +81,7 @@ export async function GET() {
         id: event.id,
         title: event.title,
         datetime: futureInstances[0]?.date ?? null,
-        instance_ids: futureInstances.map((i: any) => i.id),
+        instance_ids: event.event_instances?.map((i: any) => i.id) ?? [],
         host: "me" as const,
         organizer_id: event.organizer_id,
         organizer_name: null as string | null,
@@ -99,7 +99,7 @@ export async function GET() {
         datetime: row.event_instances.datetime
           ? new Date(row.event_instances.datetime)
           : null,
-        instance_ids: [row.event_instances.id],
+        instance_ids: event.event_instances?.map((i: any) => i.id) ?? [],
         host:
           event.organizer_id === user.id ? "me" : "other",
         organizer_id: event.organizer_id,
@@ -168,16 +168,13 @@ export async function GET() {
       organizer_name: nameMap.get(e.organizer_id) ?? null,
       rsvp_count: rsvpCountMap.get(e.id) ?? 0,
     }))
-    .filter(
-      (e) =>
-        e.datetime instanceof Date &&
-        !isNaN(e.datetime.getTime())
-    )
-    .sort(
-      (a, b) =>
-        (a.datetime as Date).getTime() -
-        (b.datetime as Date).getTime()
-    );
+    
+   .sort(
+  (a, b) =>
+    (a.datetime ? a.datetime.getTime() : 0) -
+    (b.datetime ? b.datetime.getTime() : 0)
+);
+
 
   return NextResponse.json({ events: all });
 }

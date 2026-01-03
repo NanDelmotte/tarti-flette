@@ -14,7 +14,7 @@ processes = ["app"]
 
 [processes]
 app = "npm start"
-cron = "sh -c 'until curl -sf http://localhost:3000/ >/dev/null; do sleep 2; done; while true; do curl -sS -X POST http://localhost:3000/api/worker/chat-notifications -H \"x-cron-secret: $CRON_SECRET\"; curl -sS -X POST http://localhost:3000/api/worker/notifications -H \"x-cron-secret: $CRON_SECRET\"; sleep 300; done'"
+
 
 
 

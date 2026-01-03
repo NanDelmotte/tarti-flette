@@ -105,6 +105,17 @@ export default function ChatPage({
             lineHeight: "1.65",
           }}
         >
+           <Link
+            href={`/dashboard`}
+            style={{
+              display: "block",
+              textDecoration: "underline",
+              marginBottom: "6px",
+              textAlign: "left",
+            }}
+          >
+            ← Home
+          </Link>
           <Link
             href={`/cirklie/${params.event_id}`}
             style={{
