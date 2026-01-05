@@ -1,3 +1,4 @@
+// src/app/login/page.tsx
 "use client";
 
 import { FormEvent, Suspense, useState } from "react";
@@ -7,18 +8,17 @@ import { useSearchParams } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
-export default function GenericLoginPage() {
+export default function LoginPage() {
   return (
     <Suspense fallback={null}>
-      <GenericLoginInner />
+      <LoginInner />
     </Suspense>
   );
 }
 
-function GenericLoginInner() {
+function LoginInner() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
-
   const initialMode =
     searchParams.get("mode") === "signup" ? "signup" : "login";
 
@@ -28,6 +28,12 @@ function GenericLoginInner() {
   const [firstName, setFirstName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   async function ensureProfile() {
     const res = await fetch("/api/profile/ensure", { method: "POST" });
@@ -39,12 +45,7 @@ function GenericLoginInner() {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
-    // ✅ Supabase client created ONLY on user action
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    );
+    setSuccess(null);
 
     try {
       if (mode === "login") {
@@ -67,9 +68,7 @@ function GenericLoginInner() {
         email,
         password,
         options: {
-          data: {
-            first_name: firstName.trim(),
-          },
+          data: { first_name: firstName.trim() },
         },
       });
 
@@ -80,9 +79,30 @@ function GenericLoginInner() {
     } catch (err: any) {
       setError(err?.message || "Something went wrong");
       setLoading(false);
+    }
+  }
+
+  async function onForgotPassword() {
+    if (!email) {
+      setError("Enter your email first.");
       return;
     }
 
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/account/password`,
+    });
+
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+      return;
+    }
+
+    setSuccess("Check your email for the reset link.");
     setLoading(false);
   }
 
@@ -93,6 +113,10 @@ function GenericLoginInner() {
 
         {error && (
           <p className="text-xs text-red-700 text-center mb-3">{error}</p>
+        )}
+
+        {success && (
+          <p className="text-xs text-green-700 text-center mb-3">{success}</p>
         )}
 
         <div className="flex gap-2 justify-center mb-4 text-xs">
@@ -145,6 +169,17 @@ function GenericLoginInner() {
           <button className="button-campaign w-full" disabled={loading}>
             {mode === "login" ? "Log in" : "Create account"}
           </button>
+
+          {mode === "login" && (
+            <button
+              type="button"
+              className="text-xs underline opacity-70 w-full"
+              onClick={onForgotPassword}
+              disabled={loading}
+            >
+              Forgot your password?
+            </button>
+          )}
         </form>
       </Frame>
     </main>
