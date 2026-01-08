@@ -93,7 +93,7 @@ function LoginInner() {
     setSuccess(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/account/password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/profile/password`,
     });
 
     if (error) {

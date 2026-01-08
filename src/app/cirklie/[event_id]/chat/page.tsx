@@ -47,14 +47,16 @@ export default function ChatPage({
 
   /** --- AUTH GATE --- */
   async function loadMe() {
-    const res = await fetch("/api/auth/me");
-    if (!res.ok) {
-      // redirect to login with redirect back to this page
-      router.replace(`/login?redirect=/cirklie/${params.event_id}/chat`);
-      return;
-    }
-    const data = await res.json();
-    setMyProfileId(data.user_id);
+    const res = await fetch("/api/me");
+const data = await res.json();
+
+if (!data?.user?.id) {
+  router.replace(`/login?redirect=/cirklie/${params.event_id}/chat`);
+  return;
+}
+
+setMyProfileId(data.user.id);
+
   }
 
   async function loadChat() {
@@ -92,10 +94,11 @@ export default function ChatPage({
   }
 
   useEffect(() => {
-    loadMe();
-    loadChat();
-    loadEvent();
-  }, []);
+  loadMe();
+  loadChat();
+  loadEvent();
+}, [params.event_id]);
+
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
