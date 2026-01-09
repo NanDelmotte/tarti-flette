@@ -1,7 +1,7 @@
 // src/app/profile/password/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Frame from "../../../components/Frame";
 
 export default function ChangePasswordPage() {
@@ -10,6 +10,11 @@ export default function ChangePasswordPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState(false);
+useEffect(() => {
+  if (!ok) return;
+
+  window.location.href = "/dashboard";
+}, [ok]);
 
   async function submit() {
     setError(null);
