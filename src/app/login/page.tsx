@@ -1,7 +1,8 @@
 // src/app/login/page.tsx
 "use client";
 
-import { FormEvent, Suspense, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
+
 import Frame from "../../components/Frame";
 import { createBrowserClient } from "@supabase/ssr";
 import { useSearchParams } from "next/navigation";
@@ -34,7 +35,9 @@ function LoginInner() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+  const code = searchParams.get("code");
 
+  
   async function ensureProfile() {
     const res = await fetch("/api/profile/ensure", { method: "POST" });
     const data = await res.json();
@@ -82,7 +85,10 @@ function LoginInner() {
     }
   }
 
+
   async function onForgotPassword() {
+    console.log("RESET redirectTo =", `${window.location.origin}/login`);
+
     if (!email) {
       setError("Enter your email first.");
       return;
@@ -93,8 +99,9 @@ function LoginInner() {
     setSuccess(null);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/profile/password`,
-    });
+  redirectTo: `${window.location.origin}/login`,
+});
+
 
     if (error) {
       setError(error.message);
@@ -172,13 +179,14 @@ function LoginInner() {
 
           {mode === "login" && (
             <button
-              type="button"
-              className="text-xs underline opacity-70 w-full"
-              onClick={onForgotPassword}
-              disabled={loading}
-            >
-              Forgot your password?
-            </button>
+  type="button"
+  className="text-xs underline opacity-70 w-full"
+  onClick={() => (window.location.href = "/forgot-password")}
+  disabled={loading}
+>
+  Forgot your password?
+</button>
+
           )}
         </form>
       </Frame>
