@@ -3,17 +3,29 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
 
+function getOrigin(request: Request) {
+  const proto = request.headers.get("x-forwarded-proto") ?? "https";
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  return `${proto}://${host}`;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
-  const redirect = url.searchParams.get("redirect") || "/dashboard";
+
+  // IMPORTANT: only allow internal redirects
+  const redirectParam = url.searchParams.get("redirect") || "/dashboard";
+  const redirectPath = redirectParam.startsWith("/") ? redirectParam : "/dashboard";
+
+  const origin = getOrigin(request);
 
   if (!code) {
-    return NextResponse.redirect(new URL("/login", request.url));
+    return NextResponse.redirect(new URL("/login", origin));
   }
 
   const cookieStore = cookies();
-  const response = NextResponse.redirect(new URL(redirect, request.url));
+  const response = NextResponse.redirect(new URL(redirectPath, origin));
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -35,30 +47,7 @@ export async function GET(request: Request) {
 
   const { error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (user) {
-    const email = user.email;
-    const firstName = user.user_metadata?.first_name;
-    const lastName = user.user_metadata?.last_name;
-
-    if (email && firstName && lastName) {
-      await supabase.from("profiles").upsert(
-        {
-          id: user.id,
-          email,
-          first_name: String(firstName),
-          last_name: String(lastName),
-          phone: null,
-        },
-        { onConflict: "id" }
-      );
-    }
+    return NextResponse.redirect(new URL("/login", origin));
   }
 
   return response;
