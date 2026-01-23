@@ -1,4 +1,3 @@
-// src/app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -10,16 +9,34 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const res = await fetch("/api/me");
-      const data = await res.json();
+      // 1) Auth gate (existing pattern)
+      const meRes = await fetch("/api/me");
+      const me = await meRes.json();
 
-      if (!data?.user) {
+      if (!me?.user) {
         window.location.replace("/login");
         return;
       }
 
-      // FIX: correct field name
-      setFirstName(data.user.firstName);
+      setFirstName(me.user.firstName);
+
+      // 2) Activity summary gate
+      const summaryRes = await fetch("/api/dashboard/summary");
+      if (!summaryRes.ok) {
+        // If summary breaks, don't block the dashboard
+        setLoading(false);
+        return;
+      }
+
+      const summary = await summaryRes.json();
+      const createdEventsCount = summary?.createdEventsCount ?? 0;
+      const rsvpsCount = summary?.rsvpsCount ?? 0;
+
+      if (createdEventsCount === 0 && rsvpsCount === 0) {
+        window.location.replace("/get-started");
+        return;
+      }
+
       setLoading(false);
     }
 
@@ -43,14 +60,10 @@ export default function DashboardPage() {
     <main className="min-h-screen flex items-center justify-center p-6">
       <Frame userName={firstName} onLogout={handleLogout} showHome showSettings>
         <div className="space-y-6 text-sm">
-                
-          {/* Primary actions */}
           <div className="space-y-4">
             <a href="/create" className="block">
               <div className="font-medium">Create a new event</div>
-              <div className="text-xs opacity-70">
-                Start something and invite people
-              </div>
+              <div className="text-xs opacity-70">Start something and invite people</div>
             </a>
 
             <a href="/events" className="block">
@@ -62,9 +75,7 @@ export default function DashboardPage() {
 
             <a href="/my-chats" className="block">
               <div className="font-medium">My event chats</div>
-              <div className="text-xs opacity-70">
-                Conversations around your events
-              </div>
+              <div className="text-xs opacity-70">Conversations around your events</div>
             </a>
 
             <a href="/my-social-signals" className="block">

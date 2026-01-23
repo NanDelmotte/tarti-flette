@@ -17,7 +17,7 @@ export default function CreateEventPage() {
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [visibility, setVisibility] =
-    useState<Visibility>("friends");
+    useState<Visibility>("inner");
 
   const [isSeries, setIsSeries] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -110,7 +110,7 @@ export default function CreateEventPage() {
         <form onSubmit={handleCreate} className="space-y-5 w-full">
           <input
             className="w-full bg-button rounded-md px-3 py-3"
-            placeholder={`${appCopy.noun.singular} title`}
+            placeholder={`Event title`}
             type="text"
             required
             value={title}
@@ -176,19 +176,18 @@ export default function CreateEventPage() {
             value={location}
             onChange={(e) => setLocation(e.target.value)}
           />
-
+<h1 className="form-section-title">Who should see this invite?</h1>
           <select
             className="w-full bg-button rounded-md px-3 py-3"
             value={visibility}
             onChange={(e) =>
               setVisibility(e.target.value as Visibility)
             }
-          >
+          >            <option value="inner">
+              Inner circle only
+            </option>
             <option value="friends">
               Friends & acquaintances
-            </option>
-            <option value="inner">
-              Inner circle only
             </option>
             <option value="public">
               Public link (anyone)
