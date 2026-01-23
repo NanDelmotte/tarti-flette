@@ -40,7 +40,7 @@ export default function RsvpJoinPage({
     setLoading(true);
     setError(null);
 
-    // ✅ Supabase client created ONLY on user action
+    // Supabase client created ONLY on user action
     const supabase = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -67,9 +67,7 @@ export default function RsvpJoinPage({
         email,
         password,
         options: {
-          data: {
-            first_name: firstName.trim(),
-          },
+          data: { first_name: firstName.trim() },
         },
       });
 
@@ -148,10 +146,19 @@ export default function RsvpJoinPage({
           />
 
           <button className="button-campaign w-full" disabled={loading}>
-            {mode === "login"
-              ? "Log in & Continue"
-              : "Create account & Continue"}
+            {mode === "login" ? "Log in & Continue" : "Create account & Continue"}
           </button>
+
+          {mode === "login" && (
+            <button
+              type="button"
+              className="text-xs underline opacity-70 w-full"
+              onClick={() => (window.location.href = "/forgot-password")}
+              disabled={loading}
+            >
+              Forgot your password?
+            </button>
+          )}
         </form>
       </Frame>
     </main>

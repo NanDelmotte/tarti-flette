@@ -1,4 +1,5 @@
-// src/app/cirklie/[event_id]/page.tsx
+//src/app/cirklie/[event_id]/page.tsx
+
 "use client";
 
 import { useEffect, useState } from "react";
@@ -108,39 +109,28 @@ export default function EventPage({
     );
   }
 
-  const current =
-    rsvps[selectedInstanceId] || { yes: [], maybe: [], no: [] };
+  const current = rsvps[selectedInstanceId] || { yes: [], maybe: [], no: [] };
 
   const selectedInstance =
     event.instances?.find((i: any) => i.id === selectedInstanceId) ||
     event.instances?.[0] ||
     null;
 
-  const isOrganizer =
-    userId && event.organizer?.id === userId;
+  const isOrganizer = userId && event.organizer?.id === userId;
 
   return (
     <main className="min-h-screen flex items-center justify-center p-6">
       <Frame userName={userName} showHome>
         <div className="flex justify-end gap-4 text-sm">
           {isOrganizer && (
-            <a
-              href={`/cirklie/${eventId}/edit`}
-              className="underline"
-            >
+            <a href={`/cirklie/${eventId}/edit`} className="underline">
               Edit
             </a>
           )}
-          <a
-            href={`/cirklie/${eventId}/chat`}
-            className="underline"
-          >
+          <a href={`/cirklie/${eventId}/chat`} className="underline">
             Chat
           </a>
-          <a
-            href={`/cirklie/${eventId}/share`}
-            className="underline"
-          >
+          <a href={`/cirklie/${eventId}/share`} className="underline">
             ⋯
           </a>
         </div>
@@ -160,9 +150,7 @@ export default function EventPage({
               <div className="space-y-2">
                 <select
                   value={selectedInstanceId}
-                  onChange={(e) =>
-                    setSelectedInstanceId(e.target.value)
-                  }
+                  onChange={(e) => setSelectedInstanceId(e.target.value)}
                 >
                   {event.instances.map((inst: any) => (
                     <option key={inst.id} value={inst.id}>
@@ -176,6 +164,16 @@ export default function EventPage({
                 )}
               </div>
             )}
+
+            <div className="mt-3">
+              <a
+                href={`/api/events/${eventId}/instances/${selectedInstanceId}/ics`}
+                className="underline text-sm"
+                download
+              >
+                Add to calendar
+              </a>
+            </div>
           </div>
         </div>
 

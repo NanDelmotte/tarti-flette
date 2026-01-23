@@ -8,15 +8,9 @@ export async function POST(
   request: Request,
   { params }: { params: { event_id: string } }
 ) {
-  const {
-    event_instance_id,
-    status,
-    first_name,
-    last_name,
-    comment,
-  } = await request.json();
+  const { event_instance_id, status, comment } = await request.json();
 
-  if (!event_instance_id || !status || !first_name) {
+  if (!event_instance_id || !status) {
     return NextResponse.json(
       { error: "Missing required fields" },
       { status: 400 }
@@ -24,9 +18,7 @@ export async function POST(
   }
 
   const normalizedComment =
-    typeof comment === "string" && comment.trim()
-      ? comment.trim()
-      : null;
+    typeof comment === "string" && comment.trim() ? comment.trim() : null;
 
   const cookieStore = cookies();
   const response = NextResponse.json({ ok: true });
@@ -51,11 +43,19 @@ export async function POST(
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
 
-  const profileId = user?.id ?? null;
+  if (userError || !user?.id) {
+    return NextResponse.json(
+      { error: "Authentication required" },
+      { status: 401 }
+    );
+  }
 
-  // 1️⃣ Fetch organizer
+  const profileId = user.id;
+
+  // 1) Fetch organizer
   const { data: event } = await supabase
     .from("events")
     .select("organizer_id")
@@ -63,34 +63,22 @@ export async function POST(
     .single();
 
   if (!event?.organizer_id) {
-    return NextResponse.json(
-      { error: "Event not found" },
-      { status: 404 }
-    );
+    return NextResponse.json({ error: "Event not found" }, { status: 404 });
   }
 
-  // 2️⃣ Look for existing RSVP
-  let existingQuery = supabase
+  // 2) Look for existing RSVP for this logged-in profile + instance
+  const { data: existing } = await supabase
     .from("rsvps")
-    .select("id, status")
+    .select("id, status, first_name, last_name")
     .eq("event_instance_id", event_instance_id)
-    .limit(1);
-
-  if (profileId) {
-    existingQuery = existingQuery.eq("profile_id", profileId);
-  } else {
-    existingQuery = existingQuery
-      .is("profile_id", null)
-      .eq("first_name", String(first_name).trim())
-      .eq("last_name", String(last_name || "").trim());
-  }
-
-  const { data: existing } = await existingQuery.maybeSingle();
+    .eq("profile_id", profileId)
+    .limit(1)
+    .maybeSingle();
 
   const isNew = !existing;
   const statusChanged = existing && existing.status !== status;
 
-  // 3️⃣ Update or insert RSVP
+  // 3) Update or insert RSVP (no anonymous rows)
   if (existing?.id) {
     const { error } = await supabase
       .from("rsvps")
@@ -105,12 +93,14 @@ export async function POST(
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
   } else {
+    // We don't accept names from the client anymore.
+    // Store blanks if your schema requires these fields.
     const { error } = await supabase.from("rsvps").insert({
       event_instance_id,
       status,
-      first_name: String(first_name).trim(),
-      last_name: String(last_name || "").trim(),
       profile_id: profileId,
+      first_name: "",
+      last_name: "",
       comment: normalizedComment,
       responded_at: new Date().toISOString(),
     });
@@ -120,7 +110,7 @@ export async function POST(
     }
   }
 
-  // 4️⃣ Enqueue notification (side effect)
+  // 4) Enqueue notification
   if (isNew || statusChanged) {
     await supabase.from("notifications_outbox").insert({
       type: "rsvp_changed",
@@ -129,8 +119,9 @@ export async function POST(
       payload: {
         event_instance_id,
         status,
-        first_name: String(first_name).trim(),
-        last_name: String(last_name || "").trim(),
+        // If you later want proper names, derive them server-side from profile table.
+        first_name: existing?.first_name ?? "",
+        last_name: existing?.last_name ?? "",
         is_new: isNew,
       },
     });

@@ -35,13 +35,10 @@ export default function RsvpGatePage({
           <b>{organizerName}</b> is hosting
         </p>
 
-        <h1 className="h1 text-campaign mb-3">
-          {event.title}
-        </h1>
+        <h1 className="h1 text-campaign mb-3">{event.title}</h1>
 
         <p className="text-sm opacity-70 mb-6">
-          {event.visibility === "inner" &&
-            "This is an inner-circle gathering"}
+          {event.visibility === "inner" && "This is an inner-circle gathering"}
           {event.visibility === "friends" &&
             "Friends and friends of friends are welcome"}
           {event.visibility === "public" &&
@@ -49,11 +46,9 @@ export default function RsvpGatePage({
         </p>
 
         {/* Prompt */}
-        <p className="text-sm font-medium mb-4">
-          How would you like to respond?
-        </p>
+        <p className="text-sm font-medium mb-4">How would you like to respond?</p>
 
-        {/* Option 1 */}
+        {/* Only option */}
         <div className="space-y-2">
           <button
             className="button-campaign w-full"
@@ -61,29 +56,13 @@ export default function RsvpGatePage({
               window.location.href = `/cirklie/${params.event_id}/rsvp/join`;
             }}
           >
-             Login or Sign Up to {appCopy.appName} 
+            Login or Sign Up to {appCopy.appName}
           </button>
 
           <p className="text-xs opacity-70">
             Join {appCopy.appName} to chat, change your response later, and see
             who else is coming
           </p>
-        </div>
-
-        {/* Option 2 */}
-        <button
-            className="button-campaign w-full"
-            onClick={() => {
-              window.location.href = `/cirklie/${params.event_id}/rsvp/respond?mode=anon`;
-            }}
-          >
-            Simple response
-          </button>
-           <p className="text-xs opacity-70">
-            A quick Yes / Maybe / No — no account needed
-          </p>
-          <div className="mt-5 space-y-2">
-          
         </div>
       </Frame>
     </main>

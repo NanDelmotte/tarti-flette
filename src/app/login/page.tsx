@@ -1,8 +1,6 @@
-// src/app/login/page.tsx
 "use client";
 
 import { FormEvent, Suspense, useEffect, useState } from "react";
-
 import Frame from "../../components/Frame";
 import { createBrowserClient } from "@supabase/ssr";
 import { useSearchParams } from "next/navigation";
@@ -20,8 +18,7 @@ export default function LoginPage() {
 function LoginInner() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") || "/dashboard";
-  const initialMode =
-    searchParams.get("mode") === "signup" ? "signup" : "login";
+  const initialMode = searchParams.get("mode") === "signup" ? "signup" : "login";
 
   const [mode, setMode] = useState<"login" | "signup">(initialMode);
   const [email, setEmail] = useState("");
@@ -35,9 +32,7 @@ function LoginInner() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
-  const code = searchParams.get("code");
 
-  
   async function ensureProfile() {
     const res = await fetch("/api/profile/ensure", { method: "POST" });
     const data = await res.json();
@@ -70,9 +65,7 @@ function LoginInner() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: { first_name: firstName.trim() },
-        },
+        options: { data: { first_name: firstName.trim() } },
       });
 
       if (error) throw error;
@@ -85,38 +78,14 @@ function LoginInner() {
     }
   }
 
-
-  async function onForgotPassword() {
-    console.log("RESET redirectTo =", `${window.location.origin}/login`);
-
-    if (!email) {
-      setError("Enter your email first.");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-  redirectTo: `${window.location.origin}/login`,
-});
-
-
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-
-    setSuccess("Check your email for the reset link.");
-    setLoading(false);
-  }
-
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-global">
       <Frame>
-        <p className="text-sm text-center mb-2">Welcome</p>
+        <p className="text-sm text-center mb-1">Welcome</p>
+
+        <p className="text-xs opacity-70 text-center mb-3">
+          Click on <b> Sign Up </b> to make your first event.
+        </p>
 
         {error && (
           <p className="text-xs text-red-700 text-center mb-3">{error}</p>
@@ -179,14 +148,13 @@ function LoginInner() {
 
           {mode === "login" && (
             <button
-  type="button"
-  className="text-xs underline opacity-70 w-full"
-  onClick={() => (window.location.href = "/forgot-password")}
-  disabled={loading}
->
-  Forgot your password?
-</button>
-
+              type="button"
+              className="text-xs underline opacity-70 w-full"
+              onClick={() => (window.location.href = "/forgot-password")}
+              disabled={loading}
+            >
+              Forgot your password?
+            </button>
           )}
         </form>
       </Frame>
