@@ -1,29 +1,27 @@
-//src/app/api/events/[event_id]/instances/[instance_id]/ics/route.ts
-
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createServerClient } from "@supabase/ssr";
+
+const TIMEZONE = "Europe/Amsterdam";
 
 function pad2(n: number) {
   return String(n).padStart(2, "0");
 }
 
-function toIcsUtc(dt: Date) {
-  // YYYYMMDDTHHMMSSZ
+// Local (no Z, no UTC conversion)
+function toIcsLocal(dt: Date) {
   return (
-    dt.getUTCFullYear() +
-    pad2(dt.getUTCMonth() + 1) +
-    pad2(dt.getUTCDate()) +
+    dt.getFullYear() +
+    pad2(dt.getMonth() + 1) +
+    pad2(dt.getDate()) +
     "T" +
-    pad2(dt.getUTCHours()) +
-    pad2(dt.getUTCMinutes()) +
-    pad2(dt.getUTCSeconds()) +
-    "Z"
+    pad2(dt.getHours()) +
+    pad2(dt.getMinutes()) +
+    pad2(dt.getSeconds())
   );
 }
 
 function icsEscape(value: string) {
-  // RFC5545 basic escaping
   return value
     .replace(/\\/g, "\\\\")
     .replace(/\n/g, "\\n")
@@ -72,27 +70,20 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  const start = new Date(data.datetime);
+  const start = new Date((data as any).datetime);
   const end = new Date(start.getTime() + 60 * 60 * 1000); // +1 hour
-  const now = new Date();
 
   const eventsAny = (data as any).events;
-const title =
-  (Array.isArray(eventsAny) ? eventsAny[0]?.title : eventsAny?.title) ?? "Event";
+  const title =
+    (Array.isArray(eventsAny)
+      ? eventsAny[0]?.title
+      : eventsAny?.title) ?? "Event";
 
-
-
-  const location = data.location ?? "";
-
-  const uid = `${data.id}@cirklie`;
-  const dtstamp = toIcsUtc(now);
-  const dtstart = toIcsUtc(start);
-  const dtend = toIcsUtc(end);
+  const location = (data as any).location ?? "";
+  const uid = `${(data as any).id}@cirklie`;
 
   const host =
-    process.env.NEXT_PUBLIC_SITE_URL ||
-    process.env.NEXT_PUBLIC_VERCEL_URL ||
-    "http://localhost:3000";
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
   const eventUrl = `${host.replace(/\/$/, "")}/cirklie/${params.event_id}`;
 
@@ -102,33 +93,25 @@ const title =
     "PRODID:-//Cirklie//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
+
     "BEGIN:VEVENT",
     `UID:${uid}`,
-    `DTSTAMP:${dtstamp}`,
-    `DTSTART:${dtstart}`,
-    `DTEND:${dtend}`,
+    `DTSTART;TZID=${TIMEZONE}:${toIcsLocal(start)}`,
+    `DTEND;TZID=${TIMEZONE}:${toIcsLocal(end)}`,
     `SUMMARY:${icsEscape(title)}`,
     location ? `LOCATION:${icsEscape(location)}` : "",
     `URL:${icsEscape(eventUrl)}`,
     "END:VEVENT",
+
     "END:VCALENDAR",
-  ].filter(Boolean);
+  ];
 
   const ics = lines.join("\r\n") + "\r\n";
 
-  const safeTitle = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "")
-    .slice(0, 40);
-
-  const filename = `cirklie-${safeTitle || "event"}.ics`;
-
   return new NextResponse(ics, {
-    status: 200,
     headers: {
       "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="cirklie-event.ics"`,
       "Cache-Control": "no-store",
     },
   });

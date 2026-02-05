@@ -1,14 +1,483 @@
-@tailwind base; 
-@tailwind components; 
-@tailwind utilities;
+/* src/app/globals.css */
 
-/* GLOBAL RESET */
-html, body {
-  background: var(--global-bg);
+/* =========================
+   Reset + base
+   ========================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  /* Typography */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
+    Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+
+  /* Layout */
+  --page-max: 720px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+
+  /* Defaults (will be overridden by palettes on html.*) */
+  --bg: #f6f7fb;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-strong: #ffffff;
+
+  --text: #111827;
+  --muted: #6b7280;
+  --border: rgba(17, 24, 39, 0.12);
+
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --focus: rgba(37, 99, 235, 0.35);
+}
+
+/* IMPORTANT: background must be driven from tokens everywhere */
+html {
+  background: var(--bg);
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--text);
+  background: var(--bg);
+}
+
+a {
+  color: inherit;
+}
+
+/* =========================
+   Palettes
+   (applied as class on <html>)
+   ========================= */
+
+/* GIRLY (🥂) */
+html.palette-girly {
+  --bg: #f4bbd3;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-strong: #ffffff;
+
+  --text: #2b1f24;
+  --muted: #6b4a5a;
+  --border: rgba(254, 93, 159, 0.35);
+
+  --accent: #fe5d9f;
+  --accent-contrast: #ffffff;
+  --focus: rgba(254, 93, 159, 0.45);
+}
+
+/* FIESTA (💃) */
+html.palette-fiesta {
+  --bg: #1729ae;
+  --surface: rgba(255, 255, 255, 0.10);
+  --surface-strong: rgba(255, 255, 255, 0.12);
+
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.78);
+  --border: rgba(255, 255, 255, 0.18);
+
+  --accent: #fe20e8;
+  --accent-contrast: #ffffff;
+  --focus: rgba(254, 32, 232, 0.40);
+}
+
+/* ZEN (🫶) */
+html.palette-zen {
+  --bg: #f8e9dc;
+  --surface: rgba(255, 255, 255, 0.92);
+  --surface-strong: #ffffff;
+
+  --text: #1f2a1b;
+  --muted: #5d6a5b;
+  --border: rgba(67, 105, 27, 0.16);
+
+  --accent: #43691b;
+  --accent-contrast: #ffffff;
+  --focus: rgba(67, 105, 27, 0.28);
+}
+
+/* CLASSY (🎉) */
+html.palette-classy {
+  --bg: #03172f;
+  --surface: rgba(255, 255, 255, 0.08);
+  --surface-strong: rgba(255, 255, 255, 0.10);
+
+  --text: #fff7b6;
+  --muted: rgba(255, 247, 182, 0.75);
+  --border: rgba(239, 212, 102, 0.24);
+
+  --accent: #efd466;
+  --accent-contrast: #03172f;
+  --focus: rgba(239, 212, 102, 0.35);
+}
+
+/* =========================
+   Layout primitives
+   ========================= */
+
+.c-page {
+  min-height: 100svh;
+  padding: var(--space-4) var(--space-3);
+  display: flex;
+  justify-content: center;
+  background: var(--bg); /* ensures full-page wash */
+}
+
+.c-wrap {
+  width: 100%;
+  max-width: var(--page-max);
+}
+
+.c-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.c-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  color: var(--muted);
+  padding: 8px 10px;
+  border-radius: 999px;
+}
+
+.c-back:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.c-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  backdrop-filter: blur(8px);
+}
+
+.c-card--tight {
+  padding: var(--space-3);
+}
+
+.c-title {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 650;
+}
+
+.c-subtitle {
+  margin: var(--space-1) 0 0 0;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.c-stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.c-section {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.c-sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.c-divider {
+  height: 1px;
+  background: var(--border);
+  margin: var(--space-2) 0;
+}
+
+/* =========================
+   Forms
+   ========================= */
+
+.c-field {
+  display: grid;
+  gap: 6px;
+}
+
+.c-label {
+  font-size: 13px;
+  font-weight: 600;
   color: var(--text);
 }
 
-/* Force theme text everywhere */
-* {
+.c-help {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.c-input,
+.c-textarea,
+.c-select {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
   color: var(--text);
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.c-textarea {
+  resize: vertical;
+}
+
+.c-input::placeholder,
+.c-textarea::placeholder {
+  color: rgba(17, 24, 39, 0.35);
+}
+
+.c-input:focus,
+.c-textarea:focus,
+.c-select:focus {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+
+/* =========================
+   Buttons
+   ========================= */
+
+.c-btnPrimary {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-contrast);
+  font-weight: 650;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.c-btnPrimary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.c-btnPrimary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+/* Buttons that are links should never look like links */
+.c-btnPrimary,
+.c-btnSecondary,
+.c-btnLink,
+.c-btnGhost {
+  text-decoration: none;
+}
+
+.c-btnPrimary:hover,
+.c-btnSecondary:hover,
+.c-btnLink:hover,
+.c-btnGhost:hover {
+  text-decoration: none;
+}
+/* Action list: mobile-first vertical rhythm */
+.c-actions {
+  display: grid;
+  gap: var(--space-2);
+}
+
+/* On wider screens, allow two columns for secondary actions if you want */
+@media (min-width: 640px) {
+  .c-actions--2col {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-btnLink {
+  border: 0;
+  background: transparent;
+  padding: 8px 10px;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.c-btnLink:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.c-btnDanger {
+  color: #b91c1c;
+}
+
+.c-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.c-btnSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.c-btnSecondary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.c-btnSecondary:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* =========================
+   Choice cards (GifPicker)
+   ========================= */
+
+.c-choice {
+  width: 100%;
+  text-align: left;
+  padding: 12px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.c-choice--active {
+  border-color: transparent;
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* Make active state feel “on palette” */
+html.palette-girly .c-choice--active {
+  background: #f1e4f3;
+}
+html.palette-zen .c-choice--active {
+  background: #cedfee;
+}
+html.palette-fiesta .c-choice--active {
+  background: rgba(255, 255, 255, 0.14);
+  outline-color: #fff600;
+}
+html.palette-classy .c-choice--active {
+  background: rgba(239, 212, 102, 0.12);
+  outline-color: #efd466;
+}
+
+.c-choice:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* =========================
+   Cover upload + modal helpers
+   ========================= */
+
+.c-mediaPreview {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.c-error {
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.c-modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: var(--space-3);
+}
+
+.c-modal {
+  width: 100%;
+  max-width: 520px;
+  background: var(--surface-strong);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 340px auto;
+}
+
+.c-modalBody {
+  position: relative;
+}
+
+.c-modalFooter {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.c-btnGhost {
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.c-btnGhost:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
 }
